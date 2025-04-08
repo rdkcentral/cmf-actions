@@ -35,7 +35,7 @@ jobs:
           allowlist: user1,bot*
 
           # whitelisted domains
-          domain-allow-list: 'domains.json'
+          domain-allow-list-file: 'domains.json'
 
          # the followings are the optional inputs - If the optional inputs are not given, then default values will be taken
           #domain-allow-list: email domains in the allow list don't have to sign the CLA document
