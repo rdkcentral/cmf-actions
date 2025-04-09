@@ -29,7 +29,7 @@ jobs:
           remote-repository-name: 'cla_signatures'
           path-to-signatures: 'signatures.json'
           
-          path-to-document: 'https://github.com/cla-assistant/github-action/blob/master/SAPCLA.md' # e.g. a CLA or a DCO document
+          path-to-document: 'https://gist.github.com/rdkcmf-jenkins/25114b6581e0c75fc75e730645febe02' # e.g. a CLA or a DCO document
           # branch should not be protected
           branch: 'main'
           allowlist: user1,bot*
