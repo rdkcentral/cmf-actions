@@ -1,4 +1,5 @@
-name: "CLA Assistant"
+name: "CLA-Lite"
+run-name: "CLA-Lite"
 on:
   workflow_call:
     secrets:
@@ -13,10 +14,10 @@ permissions:
   statuses: write
 
 jobs:
-  CLAAssistant:
+  CLA-Lite:
     runs-on: ubuntu-latest
     steps:
-      - name: "Signature check"
+      - name: "CLA-Lite"
         if: (github.event.comment.body == 'recheck' || startsWith(github.event.comment.body, 'I have read the CLA Document and I hereby sign the CLA')) || github.event_name == 'pull_request_target'
         uses: rdkcentral/contributor-assistant_github-action@v2.6.2
         env:
