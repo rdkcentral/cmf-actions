@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   CLA-Lite:
-    name: "Signature"
+    name: "Check"
     runs-on: ubuntu-latest
     steps:
       - if: (github.event.comment.body == 'recheck' || startsWith(github.event.comment.body, 'I have read the CLA Document and I hereby sign the CLA')) || github.event_name == 'pull_request_target'
