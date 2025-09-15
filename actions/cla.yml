@@ -1,9 +1,4 @@
-name: "CLA Signature Check"
-
-# Prevent concurrent runs for the same PR
-concurrency:
-  group: cla-${{ github.event.pull_request.number || github.event.issue.number }}
-  cancel-in-progress: true
+name: "CLA"
 
 permissions:
   contents: read
@@ -19,14 +14,8 @@ on:
 
 jobs:
   cla-signature-check:
-    name: "Check CLA Signature"
+    name: "Signature"
     timeout-minutes: 10
-    # Only run on comments that contain CLA-related keywords or on PR events
-    if: |
-      github.event_name == 'pull_request_target' ||
-      (github.event_name == 'issue_comment' &&
-       (contains(github.event.comment.body, 'recheck') ||
-        contains(github.event.comment.body, 'I have read the CLA')))
     uses: rdkcentral/cmf-actions/.github/workflows/cla.yml@1.0.0
     secrets:
       PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_ASSISTANT }}
