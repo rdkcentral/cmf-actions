@@ -16,6 +16,6 @@ jobs:
   CLA-Lite:
     name: "Signature"
     timeout-minutes: 10
-    uses: rdkcentral/cmf-actions/.github/workflows/cla.yml@1.0.0
+    uses: rdkcentral/cmf-actions/.github/workflows/cla.yml@latest
     secrets:
       PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_ASSISTANT }}
