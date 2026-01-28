@@ -1,0 +1,83 @@
+{
+  "$schema": "./schema.json",
+  "name": "rdkb",
+  "version": "2.0.0",
+  "description": "RDK-B (Broadband) commit message format with 7 required fields",
+  "author": "RDK Central",
+  "type": "full-message",
+  "validation": {
+    "mode": "all-required",
+    "fields": [
+      {
+        "name": "ticket",
+        "pattern": "^[A-Z]+-[0-9]+ : .+",
+        "flags": "",
+        "message": "Ticket number and Title",
+        "description": "First line must be: TICKET-123 : Title of change"
+      },
+      {
+        "name": "description",
+        "pattern": "Description\\s*:",
+        "flags": "i",
+        "message": "Description field",
+        "description": "Must contain: Description : <description>"
+      },
+      {
+        "name": "reason",
+        "pattern": "Reason for change\\s*:",
+        "flags": "i",
+        "message": "Reason for change field",
+        "description": "Must contain: Reason for change : <reason>"
+      },
+      {
+        "name": "testProcedure",
+        "pattern": "Test Procedure\\s*:",
+        "flags": "i",
+        "message": "Test Procedure field",
+        "description": "Must contain: Test Procedure : <procedure>"
+      },
+      {
+        "name": "priority",
+        "pattern": "Priority\\s*:",
+        "flags": "i",
+        "message": "Priority field",
+        "description": "Must contain: Priority : <priority>"
+      },
+      {
+        "name": "risks",
+        "pattern": "Risks\\s*:\\s*(Low|Medium|High)",
+        "flags": "i",
+        "message": "Risks field (Low/Medium/High)",
+        "description": "Must contain: Risks : Low/Medium/High"
+      },
+      {
+        "name": "signedOff",
+        "pattern": "Signed-off-by\\s*:\\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+        "flags": "i",
+        "message": "Signed-off-by field (valid email)",
+        "description": "Must include: Signed-off-by : developer@domain.com"
+      }
+    ]
+  },
+  "errorFormat": "<TICKET-NUMBER> : <Title>\nDescription : <Description>\nReason for change : <Reason>\nTest Procedure : <Procedure>\nPriority : <Priority>\nRisks : Low/Medium/High\nSigned-off-by : <email@domain>",
+  "skip": {
+    "enabled": true,
+    "pattern": "^Merge ",
+    "message": "⏭️  Skipping merge commit: "
+  },
+  "metadata": {
+    "examples": {
+      "valid": [
+        "RDKB-12345 : Fix memory leak in WiFi module\nDescription : Resolved memory leak occurring during WiFi reconnection\nReason for change : Memory consumption increases over time causing system instability\nTest Procedure : Tested WiFi connect/disconnect cycles for 24 hours, no leaks detected\nPriority : High\nRisks : Low\nSigned-off-by : developer@organization.com"
+      ],
+      "invalid": [
+        "Missing ticket number in first line",
+        "RDKB-123 (missing title after colon)",
+        "Missing Description field",
+        "Risks : Critical (must be Low/Medium/High)",
+        "Missing Signed-off-by email"
+      ]
+    },
+    "documentation": "https://wiki.rdkcentral.com/display/RDK/RDK-B+Commit+Guidelines"
+  }
+}

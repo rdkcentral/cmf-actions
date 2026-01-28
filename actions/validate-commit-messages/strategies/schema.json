@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/rdkcentral/cmf-actions/actions/validate-commit-messages/strategies/schema.json",
+  "title": "Commit Message Validation Strategy",
+  "description": "Schema for commit message validation strategy definitions",
+  "type": "object",
+  "required": ["name", "version", "type", "validation"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema file"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Strategy identifier (lowercase, hyphens allowed). Used as the 'strategy' input value."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this strategy definition"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this strategy validates"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author or organization that defined this strategy"
+    },
+    "type": {
+      "enum": ["first-line", "full-message"],
+      "description": "Validation scope: 'first-line' validates only the commit subject line, 'full-message' validates the entire commit message structure"
+    },
+    "validation": {
+      "description": "Validation rules - structure depends on 'type'",
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "First-line validation (one regex pattern for the commit subject line only)",
+          "required": ["pattern"],
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "JavaScript regex pattern (without delimiters)"
+            },
+            "flags": {
+              "type": "string",
+              "pattern": "^[gimsuvy]*$",
+              "default": "",
+              "description": "Regex flags: g=global, i=case-insensitive, m=multiline, s=dotall, u=unicode, v=unicodeSets, y=sticky"
+            },
+            "message": {
+              "type": "string",
+              "description": "Short error message shown when validation fails"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Full-message validation (multiple field patterns for structured commit messages)",
+          "required": ["mode", "fields"],
+          "properties": {
+            "mode": {
+              "enum": ["all-required", "any-required"],
+              "description": "all-required: all fields must match | any-required: at least one field must match"
+            },
+            "fields": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Array of field validation rules",
+              "items": {
+                "type": "object",
+                "required": ["name", "pattern", "message"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]+$",
+                    "description": "Field identifier (used in error messages)"
+                  },
+                  "pattern": {
+                    "type": "string",
+                    "description": "JavaScript regex pattern for this field"
+                  },
+                  "flags": {
+                    "type": "string",
+                    "pattern": "^[gimsuvy]*$",
+                    "default": "",
+                    "description": "Regex flags for this field's pattern"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "Error message shown when this field fails validation"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Detailed explanation of what this field validates"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "errorFormat": {
+      "type": "string",
+      "description": "Template for error messages shown when validation fails."
+    },
+    "skip": {
+      "type": "object",
+      "description": "Optional configuration for skipping commits (e.g., merge commits)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to skip commits matching the pattern"
+        },
+        "pattern": {
+          "type": "string",
+          "default": "^Merge ",
+          "description": "Regex pattern to match commits that should be skipped (tests against first line)"
+        },
+        "message": {
+          "type": "string",
+          "default": "⏭️  Skipping merge commit: ",
+          "description": "Log message prefix when skipping (commit SHA will be appended automatically)"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata for documentation and enhanced error messages",
+      "properties": {
+        "examples": {
+          "type": "object",
+          "description": "Example commit messages for documentation",
+          "properties": {
+            "valid": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Examples of valid commit messages"
+            },
+            "invalid": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Examples of invalid commit messages with explanations"
+            }
+          }
+        },
+        "documentation": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to full documentation for this commit format"
+        }
+      }
+    }
+  }
+}
