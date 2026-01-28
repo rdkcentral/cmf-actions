@@ -15,8 +15,7 @@ inputs:
     required: true
   strategy:
     description: 'Validation strategy: rdkb, conventional, semantic-release, or custom strategy name'
-    required: false
-    default: 'rdkb'
+    required: true
   github-token:
     description: 'GitHub token with contents:read permission'
     required: true
@@ -68,12 +67,16 @@ runs:
           // ============================================
           const baseRef = process.env.BASE_REF;
           const headRef = process.env.HEAD_REF;
-          const strategy = process.env.STRATEGY || 'rdkb';
+          const strategy = process.env.STRATEGY;
           const failOnError = process.env.FAIL_ON_ERROR === 'true';
           const actionPath = process.env.ACTION_PATH;
 
           if (!baseRef || !headRef) {
             throw new Error('❌ Both base-ref and head-ref are required inputs');
+          }
+
+          if (!strategy) {
+            throw new Error('❌ strategy is a required input');
           }
 
           if (baseRef === headRef) {
@@ -86,7 +89,7 @@ runs:
             return;
           }
 
-          console.log(`🔍 Validating commits between ${baseRef.substring(0, 7)}...${headRef.substring(0, 7)}`);
+          console.log(`🔍 Validating commits between ${baseRef.substring(0, Math.min(7, baseRef.length))}...${headRef.substring(0, Math.min(7, headRef.length))}`);
           console.log(`📋 Using strategy: ${strategy}`);
 
           // ============================================
