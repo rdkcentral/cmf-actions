@@ -14,7 +14,7 @@ inputs:
     description: 'Head commit SHA to validate to (e.g., github.sha)'
     required: true
   strategy:
-    description: 'Validation strategy: rdkb, conventional, semantic-release, rdke, or custom strategy name'
+    description: 'Validation strategy: rdkb, conventional, semantic-release, or custom strategy name'
     required: false
     default: 'rdkb'
   github-token:

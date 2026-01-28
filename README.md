@@ -74,7 +74,7 @@ Performs license scanning and compliance checks using FOSSology on pull request 
 A flexible composite action for validating commit messages against configurable JSON-based strategies with detailed error feedback.
 
 **Features**:
-- Multiple validation strategies (Conventional Commits, RDK-B, RDK-E, Semantic Release, custom)
+- Multiple validation strategies (Conventional Commits, RDK-B, Semantic Release, custom)
 - JSON-based configuration with schema validation
 - Detailed error feedback tailored to each strategy
 - Handles edge cases (empty commits, force pushes, branch deletions)

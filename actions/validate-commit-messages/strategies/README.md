@@ -467,12 +467,12 @@ Valid types: feat, fix, docs
 
 ```json
 {
-  "name": "rdke",
+  "name": "rdkb",
   "type": "full-message",
   "validation": {
     "fields": [
-      {"name": "component", "message": "Component field"},
-      {"name": "testing", "message": "Testing field"}
+      {"name": "description", "message": "Description field"},
+      {"name": "testing", "message": "Test Procedure field"}
     ]
   }
 }
@@ -480,13 +480,13 @@ Valid types: feat, fix, docs
 
 **Output when validation fails:**
 ```
-❌ 1 commit(s) don't follow rdke format:
+❌ 1 commit(s) don't follow rdkb format:
 
-- abc1234: "RDKE-123: Fix bug" (Missing: Component field, Testing field)
+- abc1234: "RDKB-123 : Fix bug" (Missing: Description field, Test Procedure field)
 
-Expected RDK-E format:
-RDKE-XXXXX : <Title>
-Component : <component-name>
+Expected RDK-B format:
+<TICKET-NUMBER> : <Title>
+Description : <Description>
 ...
 ```
 

@@ -308,66 +308,6 @@ Invalid commits (2 out of 5):
 - `errorFormat` → Template for detailed error explanation
 - `metadata.examples.valid` → Shown as guidance in error output
 
-#### Example 2: Full-Message Strategy (RDK-E)
-
-**Config:**
-```json
-{
-  "name": "rdke",
-  "type": "full-message",
-  "validation": {
-    "mode": "all-required",
-    "fields": [
-      {
-        "name": "ticket",
-        "pattern": "^RDKE-[0-9]+ :",
-        "message": "Ticket number"
-      },
-      {
-        "name": "component",
-        "pattern": "Component\\s*:\\s*.+",
-        "message": "Component field"
-      },
-      {
-        "name": "testing",
-        "pattern": "Testing\\s*:\\s*.+",
-        "message": "Testing field"
-      }
-    ]
-  },
-  "errorFormat": "Expected RDK-E format:\nRDKE-XXXXX : <Title>\nComponent : ...\nTesting : ..."
-}
-```
-
-**Error Output:**
-```
-❌ Commit message validation failed (rdke)
-
-Invalid commits (1 out of 3):
-
-1. ghi9012 - "RDKE-4567 : Add telemetry support"
-   ├─ Missing required fields:
-   │  • Component field
-   │  • Testing field
-   │
-   ├─ Expected RDK-E format:
-   │  RDKE-XXXXX : <Title>
-   │  Component : ...
-   │  Testing : ...
-   │
-   └─ Example:
-      RDKE-1234 : Implement feature X
-      Component : networking
-      Testing : Unit tests added
-```
-
-**Key Config → Error Mappings:**
-- `validation.fields[].name` → Identifies which field is missing
-- `validation.fields[].message` → Human-readable field description
-- `validation.fields[].pattern` → Tests for field presence
-- `validation.mode: "all-required"` → Determines if all fields must be present
-- `errorFormat` → Template shown when any field is missing
-
 ## Edge Cases & Error Handling
 
 The action gracefully handles common Git edge cases:
@@ -562,7 +502,6 @@ jobs:
           - conventional
           - semantic-release
           - rdkb
-          - rdke
 
     steps:
       - uses: actions/checkout@v4
@@ -601,7 +540,6 @@ on:
           - conventional
           - semantic-release
           - rdkb
-          - rdke
 
 jobs:
   validate:
