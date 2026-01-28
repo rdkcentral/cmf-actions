@@ -133,17 +133,17 @@ runs:
 
           if (!isValid) {
             // Format error WITHOUT expected format for error-details
-            const errorListOnly = validator.formatErrorMessage(invalidCommits, validatorObj);
+            const errorMessage = validator.formatErrorMessage(invalidCommits, validatorObj);
 
             core.setOutput('is-valid', 'false');
             core.setOutput('invalid-commits', invalidCommits.length.toString());
             core.setOutput('commits-scanned', commits.length.toString());
-            core.setOutput('error-details', errorListOnly);
+            core.setOutput('error-details', errorMessage);
             core.setOutput('expected-format', validatorObj.expectedFormat);
             core.setOutput('strategy-used', validatorObj.name);
 
             if (failOnError) {
-              core.setFailed(errorListOnly);
+              core.setFailed(errorMessage);
             }
           } else {
             console.log(`\n✅ All ${commits.length} commits are valid (strategy: ${validatorObj.name})`);

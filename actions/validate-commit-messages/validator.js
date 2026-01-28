@@ -310,7 +310,7 @@ function validateCommits(commits, validator, maxCommits = 100) {
 function formatErrorMessage(invalidCommits, validator) {
   const errorDetails = invalidCommits.map(c => {
     const errorInfo = c.errors && c.errors.length > 0
-      ? ` \n(Missing: ${c.errors.join(', ')})`
+      ? `\n(Missing: ${c.errors.join(', ')})`
       : '';
     return `- ${c.sha}: "${c.message}"${errorInfo}`;
   }).join('\n');
