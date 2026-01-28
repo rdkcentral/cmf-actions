@@ -11,6 +11,11 @@
     "message": "Must follow semantic-release format (feat, fix, perf, or revert only)"
   },
   "errorFormat": "Expected format: <type>(<scope>): <description>\nValid types for semantic versioning: feat, fix, perf, revert\n\nNote: Only these types trigger releases.\nUse other types (docs, chore, etc.) for non-release commits.",
+  "skip": {
+    "enabled": true,
+    "pattern": "^Merge ",
+    "message": "⏭️  Skipping merge commit: "
+  },
   "metadata": {
     "examples": {
       "valid": [
