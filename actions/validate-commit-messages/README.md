@@ -137,7 +137,7 @@ All strategies are loaded from JSON configuration files. Custom strategies can b
 | `head-ref` | ✅ Yes | - | Head commit SHA or ref (e.g., `${{ github.sha }}`) |
 | `strategy` | ✅ Yes | - | Validation strategy name (see Available Strategies) |
 | `github-token` | ✅ Yes | - | GitHub token for API access (`${{ secrets.GITHUB_TOKEN }}`) |
-| `fail-on-error` | No | `true` | Whether to fail workflow on invalid commits (set `false` for reporting only) |
+| `fail-on-error` | ❌ No | `true` | When set to `false`, runs in reporting-only mode: validation errors are reported via annotations but do not fail the workflow |
 
 ### Understanding `base-ref` and `head-ref`
 

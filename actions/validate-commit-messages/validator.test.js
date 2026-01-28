@@ -12,7 +12,7 @@ const path = require('path');
 
 // Test: loadStrategy - valid strategy
 test('loadStrategy loads valid strategy successfully', () => {
-  const result = loadStrategy('rdkb');
+  const result = loadStrategy('rdkb', __dirname);
   assert.strictEqual(result.validator.name, 'rdkb');
   assert.strictEqual(result.validator.type, 'full-message');
   assert.ok(result.validator);
@@ -22,15 +22,15 @@ test('loadStrategy loads valid strategy successfully', () => {
 // Test: loadStrategy - path traversal protection
 test('loadStrategy rejects path traversal attempts', () => {
   assert.throws(
-    () => loadStrategy('../../../etc/passwd'),
+    () => loadStrategy('../../../etc/passwd', __dirname),
     /Invalid strategy name/
   );
   assert.throws(
-    () => loadStrategy('../../secrets'),
+    () => loadStrategy('../../secrets', __dirname),
     /Invalid strategy name/
   );
   assert.throws(
-    () => loadStrategy('foo/bar'),
+    () => loadStrategy('foo/bar', __dirname),
     /Invalid strategy name/
   );
 });
@@ -38,15 +38,15 @@ test('loadStrategy rejects path traversal attempts', () => {
 // Test: loadStrategy - invalid characters
 test('loadStrategy rejects uppercase and special characters', () => {
   assert.throws(
-    () => loadStrategy('MyStrategy'),
+    () => loadStrategy('MyStrategy', __dirname),
     /Invalid strategy name/
   );
   assert.throws(
-    () => loadStrategy('my_strategy'),
+    () => loadStrategy('my_strategy', __dirname),
     /Invalid strategy name/
   );
   assert.throws(
-    () => loadStrategy('my.strategy'),
+    () => loadStrategy('my.strategy', __dirname),
     /Invalid strategy name/
   );
 });
@@ -54,8 +54,8 @@ test('loadStrategy rejects uppercase and special characters', () => {
 // Test: loadStrategy - non-existent strategy
 test('loadStrategy throws on non-existent strategy', () => {
   assert.throws(
-    () => loadStrategy('nonexistent'),
-    /ENOENT/
+    () => loadStrategy('nonexistent', __dirname),
+    /Strategy 'nonexistent' not found/
   );
 });
 
@@ -69,8 +69,8 @@ test('loadStrategy handles malformed JSON gracefully', async (t) => {
 
   await t.test('verify error handling', () => {
     assert.throws(
-      () => loadStrategy('test-malformed'),
-      /Invalid or malformed strategy file/
+      () => loadStrategy('test-malformed', __dirname),
+      /Failed to parse strategy file/
     );
   });
 
@@ -93,7 +93,7 @@ test('loadStrategy validates required config fields', async (t) => {
 
   await t.test('verify validation error', () => {
     assert.throws(
-      () => loadStrategy('test-incomplete'),
+      () => loadStrategy('test-incomplete', __dirname),
       /Missing required fields/
     );
   });
@@ -118,7 +118,7 @@ test('loadStrategy validates type field', async (t) => {
 
   await t.test('verify type validation', () => {
     assert.throws(
-      () => loadStrategy('test-badtype'),
+      () => loadStrategy('test-badtype', __dirname),
       /type must be 'first-line' or 'full-message'/
     );
   });
@@ -146,7 +146,7 @@ test('loadStrategy validates mode field for full-message', async (t) => {
 
   await t.test('verify mode validation', () => {
     assert.throws(
-      () => loadStrategy('test-badmode'),
+      () => loadStrategy('test-badmode', __dirname),
       /validation.mode must be 'all' or 'any'/
     );
   });
@@ -173,7 +173,7 @@ test('first-line validator accepts valid commit', async (t) => {
   });
 
   await t.test('verify validation logic', () => {
-    const { validator } = loadStrategy('test-firstline');
+    const { validator } = loadStrategy('test-firstline', __dirname);
 
     // First-line validators test the message string directly and return boolean
     const validResult = validator.validate('feat: add feature');
@@ -200,15 +200,15 @@ test('full-message validator with mode=all requires all fields', async (t) => {
       validation: {
         mode: 'all',
         fields: [
-          { name: 'Ticket', pattern: '^[A-Z]+-\\d+$', message: 'Ticket required' },
-          { name: 'Description', pattern: '.+', message: 'Description required' }
+          { name: 'Ticket', pattern: 'Ticket\\s*:\\s*[A-Z]+-\\d+', message: 'Ticket required' },
+          { name: 'Description', pattern: 'Description\\s*:', message: 'Description required' }
         ]
       }
     }));
   });
 
   await t.test('verify all fields required', () => {
-    const { validator } = loadStrategy('test-fullmsg-all');
+    const { validator } = loadStrategy('test-fullmsg-all', __dirname);
 
     // Full-message validators test the full message string and return {valid, errors}
     // All fields present - should pass
@@ -241,15 +241,15 @@ test('full-message validator with mode=any requires at least one field', async (
       validation: {
         mode: 'any',
         fields: [
-          { name: 'Bug', pattern: '^BUG-\\d+$', message: 'Bug ID' },
-          { name: 'Feature', pattern: '^FEAT-\\d+$', message: 'Feature ID' }
+          { name: 'Bug', pattern: 'Bug\\s*:\\s*BUG-\\d+', message: 'Bug required' },
+          { name: 'Feature', pattern: 'Feature\\s*:\\s*FEAT-\\d+', message: 'Feature required' }
         ]
       }
     }));
   });
 
   await t.test('verify at least one field required', () => {
-    const { validator } = loadStrategy('test-fullmsg-any');
+    const { validator } = loadStrategy('test-fullmsg-any', __dirname);
 
     // First field present - should pass
     const msg1 = 'Subject\n\nBug: BUG-123';
@@ -290,8 +290,8 @@ test('validator handles invalid regex patterns gracefully', async (t) => {
 
   await t.test('verify regex error handling', () => {
     assert.throws(
-      () => loadStrategy('test-badregex'),
-      /Failed to compile regex pattern/
+      () => loadStrategy('test-badregex', __dirname),
+      /Invalid regex pattern/
     );
   });
 
@@ -303,11 +303,12 @@ test('validator handles invalid regex patterns gracefully', async (t) => {
 // Test: formatErrorMessage
 test('formatErrorMessage produces expected output', () => {
   const failures = [
-    { sha: 'abc123', message: 'Invalid format' },
-    { sha: 'def456', message: 'Missing field' }
+    { sha: 'abc123', message: 'Invalid format', errors: ['ticket'] },
+    { sha: 'def456', message: 'Missing field', errors: ['description'] }
   ];
 
-  const result = formatErrorMessage(failures, 'test-strategy');
+  const mockValidator = { name: 'test-strategy' };
+  const result = formatErrorMessage(failures, mockValidator);
 
   assert.ok(result.includes('❌'), 'Should include error symbol');
   assert.ok(result.includes('2 commit(s)'), 'Should include failure count');
