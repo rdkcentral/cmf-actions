@@ -6,7 +6,7 @@
   "author": "RDK Central",
   "type": "full-message",
   "validation": {
-    "mode": "all-required",
+    "mode": "all",
     "fields": [
       {
         "name": "ticket",
@@ -55,7 +55,7 @@
         "pattern": "Signed-off-by\\s*:\\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
         "flags": "i",
         "message": "Signed-off-by field (valid email)",
-        "description": "Must include: Signed-off-by : developer@domain.com"
+        "description": "Must contain: Signed-off-by : <email>"
       }
     ]
   },

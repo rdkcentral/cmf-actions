@@ -78,6 +78,7 @@ graph TD
     C --> G[Tests entire commit message]
     C --> H[Multiple field patterns]
     C --> I[Examples:<br/>- RDK-B]
+    C --> J[Mode: all or any]
 ```
 
 ## Using a Strategy
@@ -149,6 +150,7 @@ Use when validation is a single regex check on the first line.
 
 Use when commit message must contain multiple structured fields:
 
+**Example 1: All fields required (AND logic)**
 ```json
 {
   "$schema": "./schema.json",
@@ -157,7 +159,7 @@ Use when commit message must contain multiple structured fields:
   "description": "My organization's structured format",
   "type": "full-message",
   "validation": {
-    "mode": "all-required",
+    "mode": "all",
     "fields": [
       {
         "name": "ticket",
@@ -175,6 +177,38 @@ Use when commit message must contain multiple structured fields:
     ]
   },
   "errorFormat": "Expected:\nTICKET-XXX: title\nReviewed: yes/no"
+}
+```
+
+**Example 2: Any field required (OR logic)**
+```json
+{
+  "$schema": "./schema.json",
+  "name": "flexible-reference",
+  "version": "1.0.0",
+  "description": "Requires at least one type of reference",
+  "type": "full-message",
+  "validation": {
+    "mode": "any",
+    "fields": [
+      {
+        "name": "jira",
+        "pattern": "JIRA-[0-9]+",
+        "message": "JIRA ticket reference"
+      },
+      {
+        "name": "github",
+        "pattern": "#[0-9]+",
+        "message": "GitHub issue reference"
+      },
+      {
+        "name": "bugzilla",
+        "pattern": "BUG[0-9]+",
+        "message": "Bugzilla reference"
+      }
+    ]
+  },
+  "errorFormat": "Expected: At least one of JIRA-XXX, #XXX, or BUGXXX"
 }
 ```
 
@@ -253,6 +287,10 @@ npm install -g ajv-cli
 # Validate your strategy
 ajv validate -s strategies/schema.json -d strategies/my-org.json
 ```
+
+**Note on Pattern Validation**: All regex patterns (including field patterns in full-message strategies and skip patterns) are validated at runtime when the strategy loads. Invalid patterns will cause immediate failure with a clear error message.
+
+**Note on Email/URL Patterns**: For fields like email or URLs, simplified patterns are often sufficient. The goal is typically to verify the field is present with a reasonable value, not to enforce full specification compliance (e.g., RFC 5322 for emails).
 
 ### Step 5: Test Your Strategy
 
@@ -392,7 +430,7 @@ Each field has its own pattern that searches the **entire commit message**:
 ```json
 {
   "validation": {
-    "mode": "all-required",
+    "mode": "all",
     "fields": [
       {
         "name": "title",
@@ -411,8 +449,10 @@ Each field has its own pattern that searches the **entire commit message**:
 ```
 
 **Mode Options:**
-- `all-required` - All fields must match (AND logic)
-- `any-required` - At least one field must match (OR logic)
+- `all` - All fields must match (AND logic) - default if mode not specified
+- `any` - At least one field must match (OR logic)
+
+Both modes are fully implemented. The validator will apply the specified mode during commit message validation.
 
 ## Error Messages & User Feedback
 
@@ -492,7 +532,7 @@ Description : <Description>
 
 ### Using Examples in Config
 
-The `metadata.examples` field is used for **documentation only** (not validation):
+The `metadata.examples` field is used for **strategy documentation only** (not included in validation error output):
 
 ```json
 {
@@ -511,7 +551,7 @@ The `metadata.examples` field is used for **documentation only** (not validation
 }
 ```
 
-These examples appear in the action's README and help developers understand the format.
+These examples serve as inline documentation in the strategy file to help strategy authors and reviewers understand the expected format. By design, they are **not included in error output** to keep validation feedback minimal and focused on the actual validation failure.
 
 ## Advanced Configuration
 
@@ -580,8 +620,55 @@ Always update:
 - `metadata.examples` - Show valid/invalid examples
 - `metadata.documentation` - Link to full guidelines
 
+## Testing Your Strategy
+
+### Automated Validation
+
+All strategy files are automatically tested by `strategies.test.js`:
+
+```bash
+cd actions/validate-commit-messages/strategies
+node --test strategies.test.js
+```
+
+Tests verify:
+- ✅ Valid JSON syntax
+- ✅ Required fields present (name, version, type, validation)
+- ✅ Valid type ('first-line' or 'full-message')
+- ✅ Semantic versioning (X.Y.Z)
+- ✅ All regex patterns compile successfully
+- ✅ Naming convention (lowercase, numbers, hyphens)
+- ✅ Filename matches strategy name
+- ✅ Schema reference correct
+
+### Manual Testing
+
+Test your strategy locally:
+
+```javascript
+// Create test file: test-my-strategy.js
+const { loadStrategy } = require('../validator.js');
+
+const { validator } = loadStrategy('my-strategy');
+
+// Test valid message
+console.log(validator.validate('feat: add feature')); // Should return true or {valid: true}
+
+// Test invalid message
+console.log(validator.validate('bad message')); // Should return false or {valid: false}
+```
+
+### Testing in CI
+
+Your strategy will be automatically tested in CI when you:
+1. Add `my-strategy.json` to the `strategies/` directory
+2. Create a pull request
+3. CI runs `strategies.test.js` which validates all JSON files
+4. Integration tests run the action with your strategy
+
 ## See Also
 
 - [Action README](../README.md) - How to use the validation action
 - [Schema Definition](./schema.json) - Full JSON schema specification
 - [Action Code](../action.yml) - Implementation details
+- [Test Workflow](../../../.github/workflows/test-validate-commit-messages.yml) - CI configuration

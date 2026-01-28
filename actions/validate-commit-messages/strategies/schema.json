@@ -62,8 +62,8 @@
           "required": ["mode", "fields"],
           "properties": {
             "mode": {
-              "enum": ["all-required", "any-required"],
-              "description": "all-required: all fields must match | any-required: at least one field must match"
+              "enum": ["all", "any"],
+              "description": "all: all fields must match (AND logic) | any: at least one field must match (OR logic)"
             },
             "fields": {
               "type": "array",

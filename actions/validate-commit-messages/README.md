@@ -288,26 +288,17 @@ The action uses strategy config to generate **context-aware error messages**:
 
 **Error Output:**
 ```
-❌ Commit message validation failed (conventional)
+❌ 2 commit(s) do not match conventional format:
 
-Invalid commits (2 out of 5):
-
-1. abc1234 - "Add new login feature"
-   ├─ Expected: <type>(<scope>): <description>
-   ├─ Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-   └─ Example: feat(auth): add OAuth2 support
-
-2. def5678 - "fixed the bug"
-   ├─ Expected: <type>(<scope>): <description>
-   ├─ Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-   └─ Example: fix(api): handle null pointer exception
+- abc1234: "Add new login feature"
+- def5678: "fixed the bug"
 ```
 
 **Key Config → Error Mappings:**
 - `validation.pattern` → Used to test commit message
 - `validation.message` → Appears in error summary
-- `errorFormat` → Template for detailed error explanation
-- `metadata.examples.valid` → Shown as guidance in error output
+- `errorFormat` → Available via `expected-format` output (not shown in error-details by default to keep output concise)
+- `metadata.examples` → For strategy documentation only, not included in error output
 
 ## Edge Cases & Error Handling
 
@@ -741,12 +732,13 @@ For more information, see [GitHub's documentation on enabling debug logging](htt
 
 ### Error: "Strategy 'xyz' not found"
 
-**Cause**: `strategies/xyz.json` doesn't exist
+**Cause**: `strategies/xyz.json` doesn't exist or strategy name is invalid
 
 **Solution**:
 1. Check available strategies in the [cmf-actions repository](https://github.com/rdkcentral/cmf-actions/tree/main/actions/validate-commit-messages/strategies)
 2. Verify strategy name matches filename (without .json extension)
-3. Ensure strategy file references schema: `"$schema": "./schema.json"`
+3. Ensure strategy name only contains lowercase letters, numbers, and hyphens (e.g., `my-org-strategy`)
+4. Ensure strategy file references schema: `"$schema": "./schema.json"`
 
 ### Error: "Validation config does not match schema"
 
@@ -761,18 +753,31 @@ ajv validate -s strategies/schema.json -d strategies/your-strategy.json
 
 ### Error: "Pattern compilation failed"
 
-**Cause**: Invalid regex in `validation.pattern`
+**Cause**: Invalid regex in `validation.pattern` or field patterns
 
-**Solution**: Test regex separately:
+**Solution**: The error message will indicate which strategy and pattern failed. Test regex separately:
 ```javascript
 new RegExp("^(feat|fix):\\s+.+", "i")  // Should not throw
 ```
+
+**Note**: All regex patterns in strategy files (both first-line and full-message) are validated at load time. Invalid patterns will cause the action to fail immediately with a clear error message indicating the problematic strategy and field.
 
 ### Error: "No commits in push"
 
 **Cause**: New branch creation or empty push
 
 **Behavior**: Action exits successfully (nothing to validate)
+
+### Warning: Invalid skip pattern
+
+**Cause**: Regex syntax error in strategy's `skip.pattern` field
+
+**Behavior**: Action logs a warning and continues with skip functionality disabled for that run
+
+**Solution**:
+- Test your skip pattern at [regex101.com](https://regex101.com) (use ECMAScript/JavaScript flavor)
+- Strategy authors should validate skip patterns before deployment
+- Example valid patterns: `^Merge `, `^(Merge |Revert )`, `^\\[bot\\]`
 
 ## Performance
 
@@ -813,6 +818,62 @@ new RegExp("^(feat|fix):\\s+.+", "i")  // Should not throw
 - Example: 500 commits ~2.1 seconds total
 
 To contribute a new strategy, create your strategy JSON file and contribute it as a change to the repo.
+
+## Testing
+
+### Running Tests Locally
+
+The action includes comprehensive unit tests using Node.js native test runner (requires Node.js 18+):
+
+```bash
+# From the action directory
+cd actions/validate-commit-messages
+node --test validator.test.js
+
+# Test strategy files
+cd strategies
+node --test strategies.test.js
+```
+
+### Test Coverage
+
+**validator.test.js** - Core validation logic:
+- Strategy loading and caching
+- Path traversal protection
+- Schema validation (required fields, type, mode)
+- First-line and full-message validation
+- Regex error handling
+- Error message formatting
+
+**strategies/strategies.test.js** - Strategy file validation:
+- JSON syntax validation
+- Required field presence
+- Type/version/mode validation
+- Regex pattern compilation
+- Naming convention enforcement
+- Auto-validates all strategy files
+
+### CI/CD Integration
+
+Tests run automatically via [.github/workflows/test-validate-commit-messages.yml](../../.github/workflows/test-validate-commit-messages.yml):
+- **Push** to `main`, `develop`, or feature branches (CMFSUPPORT-*)
+- **Pull requests** to `main` or `develop`
+- **Manual trigger** via workflow_dispatch
+
+The workflow includes both unit tests and integration tests with all built-in strategies.
+
+### Adding New Tests
+
+```javascript
+// Unit test example
+test('descriptive test name', () => {
+  const { validator } = loadStrategy('my-strategy');
+  const result = validator.validate('test message');
+  assert.strictEqual(result, expected);
+});
+```
+
+Strategy validation tests automatically check new strategy files added to the `strategies/` directory.
 
 ## See Also
 

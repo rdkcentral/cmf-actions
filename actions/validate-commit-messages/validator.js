@@ -14,6 +14,12 @@ const path = require('path');
 
 /**
  * Strategy cache for memoization (prevents re-parsing files)
+ *
+ * Note: This cache is per-process and persists across multiple action invocations
+ * within the same GitHub Actions job step. In typical usage (each action runs in a
+ * fresh process), this provides no benefit. In edge cases where the action is called
+ * multiple times via github-script in the same job, the cache could become stale if
+ * strategy files are modified between calls. This is an unlikely scenario in practice.
  */
 const strategyCache = new Map();
 
@@ -22,10 +28,18 @@ const strategyCache = new Map();
  *
  * @param {string} strategyName - Name of the strategy (without extension)
  * @param {string} actionPath - Absolute path to the action directory
- * @returns {{validator: object, loadTime: number}} Parsed validator and load time in ms
+ * @returns {{validator: object, loadTime: number}} Parsed validator and load time in ms (loadTime is for performance debugging)
  * @throws {Error} If strategy file not found or invalid
  */
 function loadStrategy(strategyName, actionPath) {
+  // Validate strategy name to prevent path traversal attacks
+  if (!/^[a-z0-9-]+$/.test(strategyName)) {
+    throw new Error(
+      `❌ Invalid strategy name: '${strategyName}'\n` +
+      `Strategy names must contain only lowercase letters, numbers, and hyphens.`
+    );
+  }
+
   // Check cache first
   if (strategyCache.has(strategyName)) {
     console.log(`⚡ Using cached strategy: ${strategyName}`);
@@ -81,7 +95,7 @@ function loadStrategy(strategyName, actionPath) {
  *
  * @param {object} config - Parsed strategy configuration
  * @returns {object} Validator with validate() function and metadata
- * @throws {Error} If config is missing required fields
+ * @throws {Error} If config is missing required fields or has invalid structure
  */
 function buildValidatorFromConfig(config) {
   // Validate required config fields
@@ -90,6 +104,68 @@ function buildValidatorFromConfig(config) {
       `❌ Invalid strategy config: Missing required fields (name, version, type, validation)\n` +
       `Check that your strategy follows the schema.json format.`
     );
+  }
+
+  // Validate type is one of allowed values
+  if (config.type !== 'first-line' && config.type !== 'full-message') {
+    throw new Error(
+      `❌ Invalid strategy config: type must be 'first-line' or 'full-message'\n` +
+      `Found: '${config.type}'`
+    );
+  }
+
+  // Validate name follows pattern (lowercase, numbers, hyphens only)
+  if (!/^[a-z0-9-]+$/.test(config.name)) {
+    throw new Error(
+      `❌ Invalid strategy config: name must contain only lowercase letters, numbers, and hyphens\n` +
+      `Found: '${config.name}'`
+    );
+  }
+
+  // Validate version follows semantic versioning pattern
+  if (!/^\d+\.\d+\.\d+$/.test(config.version)) {
+    throw new Error(
+      `❌ Invalid strategy config: version must follow semantic versioning (X.Y.Z)\n` +
+      `Found: '${config.version}'`
+    );
+  }
+
+  // Validate validation structure based on type
+  if (config.type === 'first-line') {
+    if (!config.validation.pattern || typeof config.validation.pattern !== 'string') {
+      throw new Error(
+        `❌ Invalid strategy config: first-line type requires validation.pattern (string)\n` +
+        `Check that your strategy follows the schema.json format.`
+      );
+    }
+  } else if (config.type === 'full-message') {
+    if (!config.validation.mode || !config.validation.fields) {
+      throw new Error(
+        `❌ Invalid strategy config: full-message type requires validation.mode and validation.fields\n` +
+        `Check that your strategy follows the schema.json format.`
+      );
+    }
+    if (config.validation.mode !== 'all' && config.validation.mode !== 'any') {
+      throw new Error(
+        `❌ Invalid strategy config: validation.mode must be 'all' or 'any'\n` +
+        `Found: '${config.validation.mode}'`
+      );
+    }
+    if (!Array.isArray(config.validation.fields) || config.validation.fields.length === 0) {
+      throw new Error(
+        `❌ Invalid strategy config: validation.fields must be a non-empty array\n` +
+        `Check that your strategy follows the schema.json format.`
+      );
+    }
+    // Validate each field has required properties
+    config.validation.fields.forEach((field, index) => {
+      if (!field.name || !field.pattern || !field.message) {
+        throw new Error(
+          `❌ Invalid strategy config: field at index ${index} is missing required properties (name, pattern, message)\n` +
+          `Check that your strategy follows the schema.json format.`
+        );
+      }
+    });
   }
 
   // Extract skip configuration with defaults
@@ -114,10 +190,19 @@ function buildValidatorFromConfig(config) {
  * Build validator for first-line strategies (validates commit subject only)
  */
 function buildFirstLineValidator(config, skipConfig) {
-  const regex = new RegExp(
-    config.validation.pattern,
-    config.validation.flags || ''
-  );
+  let regex;
+  try {
+    regex = new RegExp(
+      config.validation.pattern,
+      config.validation.flags || ''
+    );
+  } catch (regexError) {
+    throw new Error(
+      `❌ Invalid regex pattern in strategy '${config.name}':\n` +
+      `Pattern: ${config.validation.pattern}\n` +
+      `Error: ${regexError.message}`
+    );
+  }
 
   return {
     name: config.name,
@@ -136,26 +221,50 @@ function buildFirstLineValidator(config, skipConfig) {
  */
 function buildFullMessageValidator(config, skipConfig) {
   const patterns = {};
+  const mode = config.validation.mode || 'all';
+
+  // Compile all field patterns with error handling
   config.validation.fields.forEach(field => {
-    patterns[field.name] = {
-      regex: new RegExp(field.pattern, field.flags || ''),
-      message: field.message
-    };
+    try {
+      patterns[field.name] = {
+        regex: new RegExp(field.pattern, field.flags || ''),
+        message: field.message
+      };
+    } catch (regexError) {
+      throw new Error(
+        `❌ Invalid regex pattern in strategy '${config.name}', field '${field.name}':\n` +
+        `Pattern: ${field.pattern}\n` +
+        `Error: ${regexError.message}`
+      );
+    }
   });
 
   return {
     name: config.name,
     version: config.version,
     type: config.type,
+    mode: mode,
     patterns: patterns,
     validate: (msg) => {
       const errors = [];
-      for (const [name, { regex, message }] of Object.entries(patterns)) {
-        if (!regex.test(msg)) {
+      const matches = [];
+
+      for (const { regex, message } of Object.values(patterns)) {
+        if (regex.test(msg)) {
+          matches.push(message);
+        } else {
           errors.push(message);
         }
       }
-      return { valid: errors.length === 0, errors };
+
+      // Apply mode logic: 'all' (AND) or 'any' (OR)
+      if (mode === 'any') {
+        // At least one field must match (OR logic)
+        return { valid: matches.length > 0, errors };
+      } else {
+        // All fields must match (AND logic) - default behavior
+        return { valid: errors.length === 0, errors };
+      }
     },
     expectedFormat: config.errorFormat,
     examples: config.metadata?.examples,
@@ -190,7 +299,8 @@ async function fetchCommits(github, context, baseRef, headRef) {
       lastError = error;
 
       // Check if it's a rate limit error
-      if (error.status === 403 && error.response?.headers?.['x-ratelimit-remaining'] === '0') {
+      const remainingRateLimit = parseInt(error.response?.headers?.['x-ratelimit-remaining'], 10);
+      if (error.status === 403 && remainingRateLimit === 0) {
         const resetTime = error.response.headers['x-ratelimit-reset'];
         const resetDate = new Date(resetTime * 1000);
         throw new Error(
@@ -243,6 +353,8 @@ function validateCommits(commits, validator, maxCommits = 100) {
   let validatedCount = 0;
 
   // Compile skip regex if enabled
+  // Note: Invalid skip patterns will be logged as warnings and skipping will be disabled.
+  // Strategy authors should validate their skip patterns before deployment.
   let skipRegex = null;
   if (validator.skip?.enabled) {
     try {
