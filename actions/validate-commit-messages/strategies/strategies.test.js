@@ -165,10 +165,10 @@ test('All regex patterns compile successfully', () => {
     }
 
     // Test skip pattern if present
-    if (strategy.validation.skip) {
+    if (strategy.skip?.pattern) {
       assert.doesNotThrow(
-        () => new RegExp(strategy.validation.skip.pattern),
-        `${file} validation.skip.pattern should be valid regex: ${strategy.validation.skip.pattern}`
+        () => new RegExp(strategy.skip.pattern),
+        `${file} skip.pattern should be valid regex: ${strategy.skip.pattern}`
       );
     }
   });
