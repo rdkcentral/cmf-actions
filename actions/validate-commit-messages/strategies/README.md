@@ -685,7 +685,7 @@ Test your strategy locally:
 // Create test file: test-my-strategy.js
 const { loadStrategy } = require('../validator.js');
 
-const { validator } = loadStrategy('my-strategy');
+const { validator } = loadStrategy('my-strategy', __dirname);
 
 // Test valid message
 console.log(validator.validate('feat: add feature')); // Should return true or {valid: true}

@@ -27,11 +27,11 @@ const strategyCache = new Map();
  * Load and parse a strategy configuration from JSON file
  *
  * @param {string} strategyName - Name of the strategy (without extension)
- * @param {string} actionPath - Absolute path to the action directory
+ * @param {string} actionRootPath - Absolute path to the action root directory
  * @returns {{validator: object, loadTime: number}} Parsed validator and load time in ms (loadTime is for performance debugging)
  * @throws {Error} If strategy file not found or invalid
  */
-function loadStrategy(strategyName, actionPath) {
+function loadStrategy(strategyName, actionRootPath) {
   // Validate strategy name to prevent path traversal attacks
   if (!/^[a-z0-9-]+$/.test(strategyName)) {
     throw new Error(
@@ -47,7 +47,7 @@ function loadStrategy(strategyName, actionPath) {
   }
 
   const loadStart = Date.now();
-  const strategiesDir = path.join(actionPath, 'strategies');
+  const strategiesDir = path.join(actionRootPath, 'strategies');
   const strategyPath = path.join(strategiesDir, `${strategyName}.json`);
 
   // Check if strategy file exists
@@ -420,11 +420,11 @@ function validateCommits(commits, validator, maxCommits = 100) {
  * @returns {string} Formatted error message with commit details
  */
 function formatErrorMessage(invalidCommits, validator) {
-  const errorDetails = invalidCommits.map(c => {
-    const errorInfo = c.errors && c.errors.length > 0
-      ? `\n(Missing: ${c.errors.join(', ')})`
+  const errorDetails = invalidCommits.map(commit => {
+    const errorInfo = commit.errors && commit.errors.length > 0
+      ? `\n(Missing: ${commit.errors.join(', ')})`
       : '';
-    return `- ${c.sha}: "${c.message}"${errorInfo}`;
+    return `- ${commit.sha}: "${commit.message}"${errorInfo}`;
   }).join('\n');
 
   return `❌ ${invalidCommits.length} commit(s) do not match ${validator.name} format:\n\n${errorDetails}\n\n`;

@@ -69,7 +69,7 @@ runs:
           const headRef = process.env.HEAD_REF;
           const strategy = process.env.STRATEGY;
           const failOnError = process.env.FAIL_ON_ERROR === 'true';
-          const actionPath = process.env.ACTION_PATH;
+          const actionRootPath = process.env.ACTION_PATH;
 
           if (!baseRef || !headRef) {
             throw new Error('❌ Both base-ref and head-ref are required inputs');
@@ -100,7 +100,7 @@ runs:
           // ============================================
           // LOAD STRATEGY
           // ============================================
-          const { validator: validatorObj, loadTime: strategyLoadTime } = validator.loadStrategy(strategy, actionPath);
+          const { validator: validatorObj, loadTime: strategyLoadTime } = validator.loadStrategy(strategy, actionRootPath);
 
           // ============================================
           // FETCH COMMITS
