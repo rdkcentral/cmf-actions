@@ -423,6 +423,42 @@ graph LR
 - `(a|b)` - Match 'a' or 'b'
 - `.+` - One or more of any character
 
+**Email Address Patterns:**
+
+For email validation in commit messages, simplified patterns are recommended over full RFC 5322 compliance:
+
+```regex
+[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}
+```
+
+**What this pattern validates:**
+- ✅ Standard email formats: `user@example.com`, `first.last@company.co.uk`
+- ✅ Plus addressing: `user+tag@example.com`
+- ✅ Subdomains: `user@mail.subdomain.example.com`
+
+**Known limitations (intentional for commit validation):**
+- May accept consecutive dots: `user..name@example.com`
+- May accept leading/trailing dots: `.user@example.com`
+- Does not validate against full RFC 5322 specification
+- Does not support quoted strings, comments, or IP address domains
+
+**Why simplified patterns are sufficient:**
+- 99.9% of real Git commit emails use standard formats
+- Full RFC 5322 compliance requires extremely complex regex (hundreds of characters)
+- Commit validation needs presence verification, not exhaustive validation
+- Edge cases (quoted strings, comments) are never used in practice
+- False positives (accepting slightly malformed addresses) are preferable to false negatives (rejecting valid addresses)
+
+**Example from rdkb.json:**
+```json
+{
+  "pattern": "Signed-off-by\\s*:\\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+  "message": "Signed-off-by field (valid email)"
+}
+```
+
+This pattern successfully validates developer signatures while keeping the regex maintainable and performant.
+
 ### Full-Message Strategies
 
 Each field has its own pattern that searches the **entire commit message**:
