@@ -11,9 +11,6 @@ const path = require('path');
 
 const STRATEGIES_DIR = __dirname;
 
-// Load schema for reference
-const schema = JSON.parse(fs.readFileSync(path.join(STRATEGIES_DIR, 'schema.json'), 'utf8'));
-
 // Get all strategy files (exclude schema and test files)
 const strategyFiles = fs.readdirSync(STRATEGIES_DIR)
   .filter(file => file.endsWith('.json') && file !== 'schema.json');
