@@ -6,7 +6,7 @@
   "author": "semantic-release team",
   "type": "first-line",
   "validation": {
-    "pattern": "^(feat|fix|perf|revert)(\\(.+\\))?!?:\\s+.+$",
+    "pattern": "^(feat|fix|perf|revert)(\\([^)]+\\))?!?:\\s+.+$",
     "flags": "i",
     "message": "Must follow semantic-release format (feat, fix, perf, or revert only)"
   },

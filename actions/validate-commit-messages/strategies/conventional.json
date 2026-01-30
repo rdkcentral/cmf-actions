@@ -6,7 +6,7 @@
   "author": "conventionalcommits.org",
   "type": "first-line",
   "validation": {
-    "pattern": "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip|merge)(\\(.+\\))?!?:\\s+.+$",
+    "pattern": "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip|merge)(\\([^)]+\\))?!?:\\s+.+$",
     "flags": "i",
     "message": "Must follow Conventional Commits format"
   },
