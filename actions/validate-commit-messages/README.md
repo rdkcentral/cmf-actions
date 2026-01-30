@@ -231,16 +231,19 @@ The workflow can display comprehensive error details in the job summary using ou
 ```yaml
 - name: Add job summary
   if: failure()
+  env:
+    ERROR_DETAILS: ${{ steps.validate.outputs.error-details }}
+    EXPECTED_FORMAT: ${{ steps.validate.outputs.expected-format }}
   run: |
-    echo "## Validation Failed" >> $GITHUB_STEP_SUMMARY
-    echo '```' >> $GITHUB_STEP_SUMMARY
-    echo "${{ steps.validate.outputs.error-details }}" >> $GITHUB_STEP_SUMMARY
-    echo '```' >> $GITHUB_STEP_SUMMARY
-    echo "" >> $GITHUB_STEP_SUMMARY
-    echo "### Expected Format" >> $GITHUB_STEP_SUMMARY
-    echo '```' >> $GITHUB_STEP_SUMMARY
-    echo "${{ steps.validate.outputs.expected-format }}" >> $GITHUB_STEP_SUMMARY
-    echo '```' >> $GITHUB_STEP_SUMMARY
+    echo "## Validation Failed" >> "$GITHUB_STEP_SUMMARY"
+    echo '```' >> "$GITHUB_STEP_SUMMARY"
+    echo "$ERROR_DETAILS" >> "$GITHUB_STEP_SUMMARY"
+    echo '```' >> "$GITHUB_STEP_SUMMARY"
+    echo "" >> "$GITHUB_STEP_SUMMARY"
+    echo "### Expected Format" >> "$GITHUB_STEP_SUMMARY"
+    echo '```' >> "$GITHUB_STEP_SUMMARY"
+    echo "$EXPECTED_FORMAT" >> "$GITHUB_STEP_SUMMARY"
+    echo '```' >> "$GITHUB_STEP_SUMMARY"
 ```
 
 ## How Strategies Relate to Schema & Error Feedback
