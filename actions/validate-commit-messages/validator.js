@@ -266,7 +266,7 @@ function buildFullMessageValidator(config, skipConfig) {
         return { valid: errors.length === 0, errors };
       }
     },
-    expectedFormat: config.errorFormat,
+    expectedFormat: config.errorFormat || `Commit must contain required fields defined in ${config.name} strategy`,
     examples: config.metadata?.examples,
     skip: skipConfig
   };
