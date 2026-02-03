@@ -6,11 +6,11 @@
   "author": "conventionalcommits.org",
   "type": "first-line",
   "validation": {
-    "pattern": "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip|merge)(\\([^)]+\\))?!?:\\s+.+$",
+    "pattern": "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\([^)]+\\))?!?:\\s+.+$",
     "flags": "i",
     "message": "Must follow Conventional Commits format"
   },
-  "errorFormat": "Expected format: <type>(<scope>): <description>\nValid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, wip, merge",
+  "errorFormat": "Expected format: <type>(<scope>): <description>\nValid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert",
   "skip": {
     "enabled": true,
     "pattern": "^Merge ",
