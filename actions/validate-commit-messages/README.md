@@ -673,7 +673,7 @@ To view detailed performance metrics and additional debugging information, enabl
 
 1. Go to your repository **Settings** → **Secrets and variables** → **Actions**
 2. Add a new repository secret:
-   - Name: `ACTIONS_RUNNER_DEBUG`
+   - Name: `ACTIONS_STEP_DEBUG`
    - Value: `true`
 3. Re-run your workflow
 

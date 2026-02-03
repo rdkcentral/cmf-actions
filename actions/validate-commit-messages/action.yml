@@ -161,7 +161,7 @@ runs:
           // ============================================
           // PERFORMANCE METRICS (only shown in debug mode)
           // ============================================
-          if (process.env.RUNNER_DEBUG === '1') {
+          if (process.env.RUNNER_DEBUG === '1' || process.env.ACTIONS_STEP_DEBUG === 'true') {
             const perfEnd = Date.now();
             const totalTime = perfEnd - perfStart;
             const validationTime = totalTime - strategyLoadTime;
