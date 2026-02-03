@@ -142,7 +142,7 @@ runs:
             core.setOutput('invalid-commits', invalidCommits.length.toString());
             core.setOutput('commits-scanned', commits.length.toString());
             core.setOutput('error-details', errorMessage);
-            core.setOutput('expected-format', validatorObj.expectedFormat);
+            core.setOutput('expected-format', validatorObj.expectedFormat || '');
             core.setOutput('strategy-used', validatorObj.name);
 
             if (failOnError) {
@@ -154,7 +154,7 @@ runs:
             core.setOutput('invalid-commits', '0');
             core.setOutput('commits-scanned', commits.length.toString());
             core.setOutput('error-details', '');
-            core.setOutput('expected-format', '');
+            core.setOutput('expected-format', validatorObj.expectedFormat || '');
             core.setOutput('strategy-used', validatorObj.name);
           }
 
