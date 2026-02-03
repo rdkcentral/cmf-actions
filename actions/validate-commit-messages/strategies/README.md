@@ -537,7 +537,7 @@ Valid types: feat, fix, docs
 **Config → Error Mapping:**
 - `validation.pattern` → Tests commit message
 - `errorFormat` → Error template
-- `metadata.examples.valid` → Shown as suggestions
+- `metadata.examples` → For strategy documentation only (not shown in error output)
 
 #### Full-Message Errors
 
@@ -568,7 +568,7 @@ Description : <Description>
 
 ### Using Examples in Config
 
-The `metadata.examples` field is used for **strategy documentation only** (not included in validation error output):
+The `metadata.examples` field is for **inline documentation only** and is never displayed to end users:
 
 ```json
 {
@@ -587,7 +587,18 @@ The `metadata.examples` field is used for **strategy documentation only** (not i
 }
 ```
 
-These examples serve as inline documentation in the strategy file to help strategy authors and reviewers understand the expected format. By design, they are **not included in error output** to keep validation feedback minimal and focused on the actual validation failure.
+**Purpose**: These examples exist purely as human-readable reference material within the strategy JSON file itself. They help:
+- Strategy authors document the expected format while writing the config
+- Code reviewers understand validation rules during pull request review
+- Future maintainers quickly see valid/invalid examples without testing
+
+**Not used for**: These examples are stored in the validator object but are intentionally **never included in validation error output**. Error messages remain concise and focused on the actual validation failure, using only `errorFormat` and field-specific `message` properties.
+
+**When users see validation errors**, they receive:
+- The commit SHA and message that failed
+- Which fields are missing (for full-message strategies)
+- The `errorFormat` text explaining the expected format
+- **NOT** the examples from `metadata.examples`
 
 ## Advanced Configuration
 
