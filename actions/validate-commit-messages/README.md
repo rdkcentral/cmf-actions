@@ -711,7 +711,7 @@ jobs:
           strategy: 'conventional'
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          RUNNER_DEBUG: ${{ inputs.debug && '1' || '' }}
+          ACTIONS_STEP_DEBUG: ${{ inputs.debug && 'true' || '' }}
 ```
 
 **Debug Output Includes:**
