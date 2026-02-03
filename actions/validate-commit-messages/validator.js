@@ -99,9 +99,17 @@ function loadStrategy(strategyName, actionRootPath) {
  */
 function buildValidatorFromConfig(config) {
   // Validate required config fields
-  if (!config.name || !config.version || !config.type || !config.validation) {
+  if (!config.$schema || !config.name || !config.version || !config.type || !config.description || !config.validation) {
+    const missing = [];
+    if (!config.$schema) missing.push('$schema');
+    if (!config.name) missing.push('name');
+    if (!config.version) missing.push('version');
+    if (!config.type) missing.push('type');
+    if (!config.description) missing.push('description');
+    if (!config.validation) missing.push('validation');
+
     throw new Error(
-      `❌ Invalid strategy config: Missing required fields (name, version, type, validation)\n` +
+      `❌ Invalid strategy config: Missing required fields: ${missing.join(', ')}\n` +
       `Check that your strategy follows the schema.json format.`
     );
   }

@@ -4,7 +4,7 @@
   "title": "Commit Message Validation Strategy",
   "description": "Schema for commit message validation strategy definitions",
   "type": "object",
-  "required": ["name", "version", "type", "validation"],
+  "required": ["$schema", "name", "version", "type", "description", "validation"],
   "properties": {
     "$schema": {
       "type": "string",

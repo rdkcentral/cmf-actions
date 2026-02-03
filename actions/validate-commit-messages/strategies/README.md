@@ -354,17 +354,17 @@ flowchart TD
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `$schema` | string | Reference to schema.json |
+| `$schema` | string | Reference to schema.json (enables IDE validation) |
 | `name` | string | Strategy identifier (lowercase-with-hyphens) |
 | `version` | string | Semantic version (X.Y.Z) |
 | `type` | string | Either `first-line` or `full-message` |
+| `description` | string | Human-readable description of the strategy |
 | `validation` | object | Validation rules (structure depends on type) |
 
 ### Optional Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `description` | string | Human-readable description |
 | `author` | string | Author or organization |
 | `errorFormat` | string | Template for error messages |
 | `skip` | object | Configuration for skipping commits (see below) |
@@ -680,7 +680,7 @@ node --test strategies.test.js
 
 Tests verify:
 - ✅ Valid JSON syntax
-- ✅ Required fields present (name, version, type, validation)
+- ✅ Required fields present ($schema, name, version, type, description, validation)
 - ✅ Valid type ('first-line' or 'full-message')
 - ✅ Semantic versioning (X.Y.Z)
 - ✅ All regex patterns compile successfully

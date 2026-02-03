@@ -113,8 +113,10 @@ test('loadStrategy validates type field', async (t) => {
 
   await t.test('setup: create strategy with invalid type', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
+      $schema: './schema.json',
       name: 'test-badtype',
       version: '1.0.0',
+      description: 'Test strategy with invalid type',
       type: 'invalid-type',
       validation: { pattern: '.*' }
     }));
@@ -138,8 +140,10 @@ test('loadStrategy validates mode field for full-message', async (t) => {
 
   await t.test('setup: create strategy with invalid mode', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
+      $schema: './schema.json',
       name: 'test-badmode',
       version: '1.0.0',
+      description: 'Test strategy with invalid mode',
       type: 'full-message',
       validation: {
         mode: 'invalid-mode',
@@ -172,8 +176,10 @@ test('first-line validator accepts valid commit', async (t) => {
 
   await t.test('setup: create first-line strategy', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
+      $schema: './schema.json',
       name: 'test-firstline',
       version: '1.0.0',
+      description: 'Test first-line strategy',
       type: 'first-line',
       validation: {
         pattern: '^(feat|fix): .+',
@@ -206,8 +212,10 @@ test('full-message validator with mode=all requires all fields', async (t) => {
 
   await t.test('setup: create full-message strategy with mode=all', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
+      $schema: './schema.json',
       name: 'test-fullmsg-all',
       version: '1.0.0',
+      description: 'Test full-message strategy with mode=all',
       type: 'full-message',
       validation: {
         mode: 'all',
@@ -249,8 +257,10 @@ test('full-message validator with mode=any requires at least one field', async (
 
   await t.test('setup: create full-message strategy with mode=any', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
+      $schema: './schema.json',
       name: 'test-fullmsg-any',
       version: '1.0.0',
+      description: 'Test full-message strategy with mode=any',
       type: 'full-message',
       validation: {
         mode: 'any',
@@ -294,8 +304,10 @@ test('validator handles invalid regex patterns gracefully', async (t) => {
 
   await t.test('setup: create strategy with invalid regex', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
+      $schema: './schema.json',
       name: 'test-badregex',
       version: '1.0.0',
+      description: 'Test strategy with invalid regex',
       type: 'first-line',
       validation: {
         pattern: '[invalid(regex',
