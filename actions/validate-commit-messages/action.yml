@@ -79,28 +79,29 @@ runs:
             throw new Error('❌ strategy is a required input');
           }
 
-          if (baseRef === headRef) {
-            console.log('⚠️  base-ref equals head-ref - no commits to validate');
-            core.setOutput('is-valid', 'true');
-            core.setOutput('invalid-commits', '0');
-            core.setOutput('commits-scanned', '0');
-            core.setOutput('error-details', '');
-            core.setOutput('strategy-used', strategy);
-            return;
-          }
-
-          console.log(`🔍 Validating commits between ${baseRef.substring(0, 7)}...${headRef.substring(0, 7)}`);
-          console.log(`📋 Using strategy: ${strategy}`);
-
           // ============================================
           // PERFORMANCE TRACKING
           // ============================================
           const perfStart = Date.now();
 
           // ============================================
-          // LOAD STRATEGY
+          // LOAD STRATEGY (before early exits to ensure expected-format is always available)
           // ============================================
           const { validator: validatorObj, loadTime: strategyLoadTime } = validator.loadStrategy(strategy, actionRootPath);
+
+          if (baseRef === headRef) {
+            console.log('⚠️  base-ref equals head-ref - no commits to validate');
+            core.setOutput('is-valid', 'true');
+            core.setOutput('invalid-commits', '0');
+            core.setOutput('commits-scanned', '0');
+            core.setOutput('error-details', '');
+            core.setOutput('expected-format', validatorObj.expectedFormat || '');
+            core.setOutput('strategy-used', strategy);
+            return;
+          }
+
+          console.log(`🔍 Validating commits between ${baseRef.substring(0, 7)}...${headRef.substring(0, 7)}`);
+          console.log(`📋 Using strategy: ${strategy}`);
 
           // ============================================
           // FETCH COMMITS
