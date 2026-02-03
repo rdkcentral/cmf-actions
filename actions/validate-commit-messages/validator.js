@@ -301,11 +301,21 @@ async function fetchCommits(github, context, baseRef, headRef) {
       // Check if it's a rate limit error
       const remainingRateLimit = parseInt(error.response?.headers?.['x-ratelimit-remaining'], 10);
       if (error.status === 403 && remainingRateLimit === 0) {
-        const resetTime = error.response.headers['x-ratelimit-reset'];
-        const resetDate = new Date(resetTime * 1000);
+        const resetTimeRaw = error.response?.headers?.['x-ratelimit-reset'];
+        const resetTime = Number(resetTimeRaw);
+
+        if (Number.isFinite(resetTime)) {
+          const resetDate = new Date(resetTime * 1000);
+          throw new Error(
+            `❌ GitHub API rate limit exceeded.\n` +
+            `Rate limit resets at: ${resetDate.toISOString()}\n` +
+            `Please try again later or use a different token.`
+          );
+        }
+
+        // Fallback if reset time header is missing or invalid
         throw new Error(
           `❌ GitHub API rate limit exceeded.\n` +
-          `Rate limit resets at: ${resetDate.toISOString()}\n` +
           `Please try again later or use a different token.`
         );
       }
