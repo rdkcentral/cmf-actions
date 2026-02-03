@@ -89,7 +89,7 @@ runs:
             return;
           }
 
-          console.log(`🔍 Validating commits between ${baseRef.substring(0, Math.min(7, baseRef.length))}...${headRef.substring(0, Math.min(7, headRef.length))}`);
+          console.log(`🔍 Validating commits between ${baseRef.substring(0, 7)}...${headRef.substring(0, 7)}`);
           console.log(`📋 Using strategy: ${strategy}`);
 
           // ============================================
