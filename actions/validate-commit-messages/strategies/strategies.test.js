@@ -34,7 +34,7 @@ test('All strategies have required top-level fields', () => {
 
     requiredFields.forEach(field => {
       assert.ok(
-        strategy.hasOwnProperty(field),
+        Object.hasOwn(strategy, field),
         `${file} should have '${field}' field`
       );
     });
