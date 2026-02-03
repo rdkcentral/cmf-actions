@@ -1,6 +1,6 @@
 /**
  * Unit tests for validator.js
- * Run with: node validator.test.js
+ * Run with: node --test validator.test.js
  * Requires Node.js 18+ for native test runner
  */
 
@@ -63,6 +63,12 @@ test('loadStrategy throws on non-existent strategy', () => {
 test('loadStrategy handles malformed JSON gracefully', async (t) => {
   const testStrategyPath = path.join(__dirname, 'strategies', 'test-malformed.json');
 
+  t.after(() => {
+    if (fs.existsSync(testStrategyPath)) {
+      fs.unlinkSync(testStrategyPath);
+    }
+  });
+
   await t.test('setup: create malformed JSON', () => {
     fs.writeFileSync(testStrategyPath, '{invalid json}');
   });
@@ -73,15 +79,17 @@ test('loadStrategy handles malformed JSON gracefully', async (t) => {
       /Failed to parse strategy file/
     );
   });
-
-  await t.test('cleanup', () => {
-    fs.unlinkSync(testStrategyPath);
-  });
 });
 
 // Test: loadStrategy - missing required fields
 test('loadStrategy validates required config fields', async (t) => {
   const testStrategyPath = path.join(__dirname, 'strategies', 'test-incomplete.json');
+
+  t.after(() => {
+    if (fs.existsSync(testStrategyPath)) {
+      fs.unlinkSync(testStrategyPath);
+    }
+  });
 
   await t.test('setup: create incomplete strategy', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
@@ -96,10 +104,6 @@ test('loadStrategy validates required config fields', async (t) => {
       () => loadStrategy('test-incomplete', __dirname),
       /Missing required fields/
     );
-  });
-
-  await t.test('cleanup', () => {
-    fs.unlinkSync(testStrategyPath);
   });
 });
 
@@ -160,6 +164,12 @@ test('loadStrategy validates mode field for full-message', async (t) => {
 test('first-line validator accepts valid commit', async (t) => {
   const testStrategyPath = path.join(__dirname, 'strategies', 'test-firstline.json');
 
+  t.after(() => {
+    if (fs.existsSync(testStrategyPath)) {
+      fs.unlinkSync(testStrategyPath);
+    }
+  });
+
   await t.test('setup: create first-line strategy', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
       name: 'test-firstline',
@@ -182,15 +192,17 @@ test('first-line validator accepts valid commit', async (t) => {
     const invalidResult = validator.validate('invalid commit');
     assert.strictEqual(invalidResult, false, 'Invalid commit should return false');
   });
-
-  await t.test('cleanup', () => {
-    fs.unlinkSync(testStrategyPath);
-  });
 });
 
 // Test: Full-message validator - mode 'all'
 test('full-message validator with mode=all requires all fields', async (t) => {
   const testStrategyPath = path.join(__dirname, 'strategies', 'test-fullmsg-all.json');
+
+  t.after(() => {
+    if (fs.existsSync(testStrategyPath)) {
+      fs.unlinkSync(testStrategyPath);
+    }
+  });
 
   await t.test('setup: create full-message strategy with mode=all', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
@@ -223,15 +235,17 @@ test('full-message validator with mode=all requires all fields', async (t) => {
     assert.strictEqual(invalidResult.valid, false);
     assert.ok(invalidResult.errors.includes('Description required'));
   });
-
-  await t.test('cleanup', () => {
-    fs.unlinkSync(testStrategyPath);
-  });
 });
 
 // Test: Full-message validator - mode 'any'
 test('full-message validator with mode=any requires at least one field', async (t) => {
   const testStrategyPath = path.join(__dirname, 'strategies', 'test-fullmsg-any.json');
+
+  t.after(() => {
+    if (fs.existsSync(testStrategyPath)) {
+      fs.unlinkSync(testStrategyPath);
+    }
+  });
 
   await t.test('setup: create full-message strategy with mode=any', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
@@ -266,15 +280,17 @@ test('full-message validator with mode=any requires at least one field', async (
     const invalidResult = validator.validate(invalidMsg);
     assert.strictEqual(invalidResult.valid, false);
   });
-
-  await t.test('cleanup', () => {
-    fs.unlinkSync(testStrategyPath);
-  });
 });
 
 // Test: Invalid regex patterns
 test('validator handles invalid regex patterns gracefully', async (t) => {
   const testStrategyPath = path.join(__dirname, 'strategies', 'test-badregex.json');
+
+  t.after(() => {
+    if (fs.existsSync(testStrategyPath)) {
+      fs.unlinkSync(testStrategyPath);
+    }
+  });
 
   await t.test('setup: create strategy with invalid regex', () => {
     fs.writeFileSync(testStrategyPath, JSON.stringify({
@@ -293,10 +309,6 @@ test('validator handles invalid regex patterns gracefully', async (t) => {
       () => loadStrategy('test-badregex', __dirname),
       /Invalid regex pattern/
     );
-  });
-
-  await t.test('cleanup', () => {
-    fs.unlinkSync(testStrategyPath);
   });
 });
 

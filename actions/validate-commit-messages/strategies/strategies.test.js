@@ -1,7 +1,7 @@
 /**
  * Strategy file validation tests
  * Ensures all built-in strategies conform to schema
- * Run with: node strategies.test.js
+ * Run with: node --test strategies.test.js
  */
 
 const test = require('node:test');
