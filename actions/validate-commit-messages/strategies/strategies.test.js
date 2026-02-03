@@ -216,4 +216,4 @@ test('All strategies reference the correct schema', () => {
 
 console.log(`\n✅ All strategy validation tests defined (${strategyFiles.length} strategies checked)\n`);
 console.log('Strategies tested:', strategyFiles.join(', '));
-console.log('\nRun with: node strategies.test.js\n');
+console.log('\nRun with: node --test strategies.test.js\n');

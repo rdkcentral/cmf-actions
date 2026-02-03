@@ -319,4 +319,4 @@ test('formatErrorMessage produces expected output', () => {
   assert.ok(result.includes('Missing field'), 'Should include second error');
 });
 
-console.log('\n✅ All tests defined. Run with: node validator.test.js\n');
+console.log('\n✅ All tests defined. Run with: node --test validator.test.js\n');
