@@ -27,10 +27,10 @@
         "ci(workflows): add commit validation"
       ],
       "invalid": [
-        "Add user authentication (missing type)",
-        "Feature: add auth (invalid type - must be lowercase)",
-        "feat missing description",
-        "unknown: invalid type"
+        "'Add user authentication' (missing type)",
+        "'feat: ' (missing description)",
+        "'feat missing colon and description' (no colon separator)",
+        "'unknown: invalid type' (unrecognized type)"
       ]
     }
   }
