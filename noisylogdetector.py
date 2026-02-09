@@ -71,16 +71,16 @@ def load_rules(path="rules.yml"):
 # -----------------------------
 def starts_with_date_and_timestamp(line):
     """
-    Matches log lines starting with any of the following timestamp patterns including leading whitespaces:
+    Matches log lines starting with any of the following timestamp patterns, after any
+    optional leading whitespace:
       - HH:MM:SS or HH:MM:SS.ssssss (e.g. 04:31:14 or 04:31:14.109764)
       - YYYY-MM-DD HH:MM:SS or YYYY-MM-DD HH:MM:SS.sss (e.g. 2024-11-11 04:31:14 or 2024-11-11 04:31:14.109)
       - Mon DD HH:MM:SS (e.g. Nov 11 04:31:14)
-    Lines not matching these patterns at the start will be ignored.
+    Lines not matching these patterns at the start (ignoring leading spaces) will be ignored.
 
     NOTE: If your log lines are not being reported, check:
-      - The timestamp is at the very start of the line.
+      - The timestamp appears at the beginning of the line (after any leading spaces).
       - The timestamp matches one of the above formats.
-      - If there are leading spaces, adjust the regex to allow them.
     """
     # This regex allows optional leading whitespace before the timestamp.
     return bool(re.match(
