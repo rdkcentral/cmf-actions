@@ -1,0 +1,66 @@
+# ------------------------------------------------------------------------------
+# Copyright 2026 <Deepthi C Shetty>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------------------------
+# ------------------------------
+# Rules for log analyzer
+# ------------------------------
+
+# Patterns to detect sensitive information
+sensitive_patterns:
+  # JWT tokens
+  - '(?i)\btoken\s*[:=]\s*[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b'
+
+  # API keys
+  - '(?i)\b(api[_-]?key|apikey)\s*[:=]\s*[A-Za-z0-9]{20,}\b'
+
+  # Password assignments
+  - '(?i)\b(password|passwd|pwd)\s*[:=]\s*\S{6,}\b'
+
+  # Authorization headers
+  - '(?i)\bauthorization\s*[:=]\s*(bearer|basic)\s+[A-Za-z0-9+/=._-]+\b'
+
+  # AWS keys
+  - '\bAKIA[0-9A-Z]{16}\b'
+
+  # Private key blocks
+  - '-----BEGIN .*PRIVATE KEY-----'
+
+  # URLs
+  - '\bhttps?://[^\s]+'
+
+  # IP addresses
+  - '\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b'
+
+  # MAC addresses
+  - '\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b'
+
+# Log levels considered noisy
+noisy_log_levels:
+  - DEBUG
+  - TRACE
+  - INFO
+
+# Keywords indicating failure
+failure_keywords:
+  - 'failed'
+  - 'error'
+  - 'exception'
+  - 'invalid'
+  - 'timeout'
+
+# Required log levels for failure messages
+required_severity_on_failure:
+  - ERROR
+  - WARN
