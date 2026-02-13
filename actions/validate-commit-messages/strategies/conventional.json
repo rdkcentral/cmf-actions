@@ -1,0 +1,37 @@
+{
+  "$schema": "./schema.json",
+  "name": "conventional",
+  "version": "1.0.0",
+  "description": "Conventional Commits specification",
+  "author": "conventionalcommits.org",
+  "type": "first-line",
+  "validation": {
+    "pattern": "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\([^)]+\\))?!?:\\s+.+$",
+    "flags": "i",
+    "message": "Must follow Conventional Commits format"
+  },
+  "errorFormat": "Expected format: <type>(<scope>): <description>\nValid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert",
+  "skip": {
+    "enabled": true,
+    "pattern": "^Merge ",
+    "message": "⏭️  Skipping merge commit: "
+  },
+  "metadata": {
+    "examples": {
+      "valid": [
+        "feat: add user authentication",
+        "feat(auth): implement OAuth2 login",
+        "fix(api): resolve memory leak in connection pool",
+        "docs: update installation instructions",
+        "refactor!: redesign API structure",
+        "ci(workflows): add commit validation"
+      ],
+      "invalid": [
+        "'Add user authentication' (missing type)",
+        "'feat: ' (missing description)",
+        "'feat missing colon and description' (no colon separator)",
+        "'unknown: invalid type' (unrecognized type)"
+      ]
+    }
+  }
+}
