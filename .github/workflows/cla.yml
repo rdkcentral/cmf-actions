@@ -31,7 +31,7 @@ jobs:
           path-to-document: 'https://gist.github.com/rdkcmf-jenkins/c797df2d0f276bbae7c2b394e895c263' # e.g. a CLA or a DCO document
           # branch should not be protected
           branch: 'main'
-          allowlist: dependabot*, dependabot[bot], dependabot, semantic-release-bot, rdkcm-rdke, rdkcm-bot, copilot, Copilot, github-copilot[bot], github-actions[bot], github-copilot, copilot[bot], copilot-swe-agent[bot]
+          allowlist: dependabot*, dependabot[bot], dependabot, semantic-release-bot, rdkcm-rdke, rdkcm-bot, copilot, Copilot, github-copilot[bot], github-actions[bot], github-copilot, copilot[bot], copilot-swe-agent[bot],actions-user
 
           # whitelisted domains
           domain-allow-list-file: 'domains.json'
