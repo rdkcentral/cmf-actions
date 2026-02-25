@@ -9,10 +9,6 @@ permissions:
   actions: write
   contents: read # this can be 'read' if the signatures are in remote repository
   pull-requests: write
-  # Note: v2.7.0+ uses @actions/core built-ins (core.summary, core.warning, core.setFailed)
-  # which don't require explicit API permissions. The CheckRun is auto-created by Actions runtime.
-  # statuses: write - REMOVED in v2.7.0 (no longer uses Status Context API)
-  # checks: write - NOT NEEDED (CheckRun created automatically by GitHub Actions)
 
 jobs:
   CLA-Lite:
