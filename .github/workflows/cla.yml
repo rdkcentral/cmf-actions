@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: (startsWith(github.event.comment.body, 'recheck') || startsWith(github.event.comment.body, 'I have read the CLA Document and I hereby sign the CLA')) || github.event_name == 'pull_request_target'
-        uses: rdkcentral/contributor-assistant_github-action@v2.6.3
+        uses: rdkcentral/contributor-assistant_github-action@v2.7.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # the below token should have repo scope and must be manually added by you in the repository's secret
@@ -27,7 +27,7 @@ jobs:
           remote-organization-name: 'rdkcentral'
           remote-repository-name: 'cla_signatures'
           path-to-signatures: 'signatures.json'
-          
+
           path-to-document: 'https://gist.github.com/rdkcmf-jenkins/c797df2d0f276bbae7c2b394e895c263' # e.g. a CLA or a DCO document
           # branch should not be protected
           branch: 'main'
@@ -35,9 +35,6 @@ jobs:
 
           # whitelisted domains
           domain-allow-list-file: 'domains.json'
-
-          # status context (for manually setting status)
-          status-context: 'Signature / Check'
 
          # the followings are the optional inputs - If the optional inputs are not given, then default values will be taken
           #domain-allow-list: email domains in the allow list don't have to sign the CLA document
