@@ -1,0 +1,179 @@
+name: 💬 Validate Commit Messages
+author: 'RDK Central'
+description: Validates commit messages against a specified strategy.
+
+branding:
+  icon: 'git-commit'
+  color: 'blue'
+
+inputs:
+  base-ref:
+    description: 'Base commit SHA to validate from (e.g., github.event.before)'
+    required: true
+  head-ref:
+    description: 'Head commit SHA to validate to (e.g., github.sha)'
+    required: true
+  strategy:
+    description: 'Validation strategy: rdkb, conventional, semantic-release, or custom strategy name'
+    required: true
+  github-token:
+    description: 'GitHub token with contents:read permission'
+    required: true
+  fail-on-error:
+    description: 'Whether to fail workflow on invalid commits (set false for reporting only)'
+    required: false
+    default: 'true'
+
+outputs:
+  is-valid:
+    description: 'Whether all commit messages passed validation'
+    value: ${{ steps.validate.outputs.is-valid }}
+  invalid-commits:
+    description: 'Number of commits that failed validation'
+    value: ${{ steps.validate.outputs.invalid-commits }}
+  commits-scanned:
+    description: 'Total number of commits discovered for validation'
+    value: ${{ steps.validate.outputs.commits-scanned }}
+  error-details:
+    description: 'Detailed error messages for failed commits'
+    value: ${{ steps.validate.outputs.error-details }}
+  expected-format:
+    description: 'Expected commit message format for the strategy'
+    value: ${{ steps.validate.outputs.expected-format }}
+  strategy-used:
+    description: 'The validation strategy that was used'
+    value: ${{ steps.validate.outputs.strategy-used }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate commit messages
+      id: validate
+      uses: actions/github-script@v8
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+        HEAD_REF: ${{ inputs.head-ref }}
+        STRATEGY: ${{ inputs.strategy }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+        ACTION_PATH: ${{ github.action_path }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const path = require('path');
+          const validator = require(path.join(process.env.ACTION_PATH, 'validator.js'));
+
+          // ============================================
+          // INPUT VALIDATION
+          // ============================================
+          const baseRef = process.env.BASE_REF;
+          const headRef = process.env.HEAD_REF;
+          const strategy = process.env.STRATEGY;
+          const failOnError = process.env.FAIL_ON_ERROR === 'true';
+          const actionRootPath = process.env.ACTION_PATH;
+
+          if (!baseRef || !headRef) {
+            throw new Error('❌ Both base-ref and head-ref are required inputs');
+          }
+
+          if (!strategy) {
+            throw new Error('❌ strategy is a required input');
+          }
+
+          // ============================================
+          // PERFORMANCE TRACKING
+          // ============================================
+          const perfStart = Date.now();
+
+          // ============================================
+          // LOAD STRATEGY (before early exits to ensure expected-format is always available)
+          // ============================================
+          const { validator: validatorObj, loadTime: strategyLoadTime } = validator.loadStrategy(strategy, actionRootPath);
+
+          if (baseRef === headRef) {
+            console.log('⚠️  base-ref equals head-ref - no commits to validate');
+            core.setOutput('is-valid', 'true');
+            core.setOutput('invalid-commits', '0');
+            core.setOutput('commits-scanned', '0');
+            core.setOutput('error-details', '');
+            core.setOutput('expected-format', validatorObj.expectedFormat || '');
+            core.setOutput('strategy-used', strategy);
+            return;
+          }
+
+          console.log(`🔍 Validating commits between ${baseRef.substring(0, 7)}...${headRef.substring(0, 7)}`);
+          console.log(`📋 Using strategy: ${strategy}`);
+
+          // ============================================
+          // FETCH COMMITS
+          // ============================================
+          const commits = await validator.fetchCommits(github, context, baseRef, headRef);
+          console.log(`📝 Found ${commits.length} commits to validate`);
+
+          // Handle empty commit list
+          if (commits.length === 0) {
+            console.log('⏭️  No commits to validate - commit range is empty');
+            core.setOutput('is-valid', 'true');
+            core.setOutput('invalid-commits', '0');
+            core.setOutput('commits-scanned', '0');
+            core.setOutput('error-details', '');
+            core.setOutput('expected-format', '');
+            core.setOutput('strategy-used', strategy);
+            return;
+          }
+
+          // ============================================
+          // VALIDATE COMMITS
+          // ============================================
+          const { invalidCommits, skippedCount, validatedCount } = validator.validateCommits(
+            commits,
+            validatorObj,
+            100 // Warn if > 100 commits
+          );
+
+          // ============================================
+          // RESULTS & ERROR REPORTING
+          // ============================================
+          const isValid = invalidCommits.length === 0;
+
+          if (!isValid) {
+            // Format error WITHOUT expected format for error-details
+            const errorMessage = validator.formatErrorMessage(invalidCommits, validatorObj);
+
+            core.setOutput('is-valid', 'false');
+            core.setOutput('invalid-commits', invalidCommits.length.toString());
+            core.setOutput('commits-scanned', commits.length.toString());
+            core.setOutput('error-details', errorMessage);
+            core.setOutput('expected-format', validatorObj.expectedFormat || '');
+            core.setOutput('strategy-used', validatorObj.name);
+
+            if (failOnError) {
+              core.setFailed(errorMessage);
+            }
+          } else {
+            console.log(`\n✅ All ${commits.length} commits are valid (strategy: ${validatorObj.name})`);
+            core.setOutput('is-valid', 'true');
+            core.setOutput('invalid-commits', '0');
+            core.setOutput('commits-scanned', commits.length.toString());
+            core.setOutput('error-details', '');
+            core.setOutput('expected-format', validatorObj.expectedFormat || '');
+            core.setOutput('strategy-used', validatorObj.name);
+          }
+
+          // ============================================
+          // PERFORMANCE METRICS (only shown in debug mode)
+          // ============================================
+          if (process.env.RUNNER_DEBUG === '1' || process.env.ACTIONS_STEP_DEBUG === 'true') {
+            const perfEnd = Date.now();
+            const totalTime = perfEnd - perfStart;
+            const validationTime = totalTime - strategyLoadTime;
+
+            console.log(`\n⏱️  Performance Metrics:`);
+            console.log(`   Strategy load: ${strategyLoadTime}ms`);
+            console.log(`   Commits found: ${commits.length}`);
+            console.log(`   Commits skipped: ${skippedCount}`);
+            console.log(`   Commits validated: ${validatedCount}`);
+            console.log(`   Commits invalid: ${invalidCommits.length}`);
+            console.log(`   Validation time: ${validationTime}ms`);
+            console.log(`   Avg per commit: ${validatedCount > 0 ? Math.round(validationTime / validatedCount) : 0}ms`);
+            console.log(`   Total: ${totalTime}ms`);
+          }

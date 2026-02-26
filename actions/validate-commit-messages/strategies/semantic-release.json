@@ -1,0 +1,38 @@
+{
+  "$schema": "./schema.json",
+  "name": "semantic-release",
+  "version": "1.0.0",
+  "description": "Semantic Release commit format (strict Conventional Commits subset)",
+  "author": "semantic-release team",
+  "type": "first-line",
+  "validation": {
+    "pattern": "^(feat|fix|perf|revert)(\\([^)]+\\))?!?:\\s+.+$",
+    "flags": "i",
+    "message": "Must follow semantic-release format (feat, fix, perf, or revert only)"
+  },
+  "errorFormat": "Expected format: <type>(<scope>): <description>\nValid types for semantic versioning: feat, fix, perf, revert\n\nNote: Only these types trigger releases.\nUse other types (docs, chore, etc.) for non-release commits.",
+  "skip": {
+    "enabled": true,
+    "pattern": "^Merge ",
+    "message": "⏭️  Skipping merge commit: "
+  },
+  "metadata": {
+    "examples": {
+      "valid": [
+        "feat: add new payment gateway integration",
+        "feat(checkout): support multiple currencies",
+        "fix: prevent race condition in order processing",
+        "fix(api): handle null responses correctly",
+        "perf(database): optimize query for large datasets",
+        "revert: feat(checkout): support multiple currencies"
+      ],
+      "invalid": [
+        "docs: update README (use conventional strategy for non-release commits)",
+        "chore: update dependencies (not a release type)",
+        "feat add feature (missing colon)",
+        "improvement: enhance performance (invalid type)"
+      ]
+    },
+    "documentation": "https://semantic-release.gitbook.io/semantic-release/"
+  }
+}

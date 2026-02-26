@@ -16,6 +16,7 @@ CMF Actions provides a centralized location for GitHub Actions workflows that ar
 
 - **Legal Compliance**: CLA (Contributor License Agreement) management
 - **Code Quality**: Unit testing and validation
+- **Commit Message Standards**: Automated commit message validation
 - **Security Scanning**: FOSSology integration for license compliance
 
 ## 🚀 Available Actions
@@ -65,6 +66,31 @@ Performs license scanning and compliance checks using FOSSology on pull request 
 
 **Triggers**:
 - Pull request events (opened, synchronize, reopened)
+
+### 4. Validate Commit Messages
+
+**Path**: `actions/validate-commit-messages`
+
+A flexible composite action for validating commit messages against configurable JSON-based strategies with detailed error feedback.
+
+**Features**:
+- Multiple validation strategies (Conventional Commits, RDK-B, Semantic Release, custom)
+- JSON-based configuration with schema validation
+- Detailed error feedback tailored to each strategy
+- Handles edge cases (empty commits, force pushes, branch deletions)
+- Event agnostic (push, pull_request, branch protection, manual triggers)
+
+**Quick Start**:
+```yaml
+- uses: rdkcentral/cmf-actions/actions/validate-commit-messages@main
+  with:
+    base-ref: ${{ github.event.before }}
+    head-ref: ${{ github.sha }}
+    strategy: 'conventional'
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+📖 [Full Documentation](./actions/validate-commit-messages/README.md)
 
 ## 📖 Usage
 
