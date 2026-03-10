@@ -194,7 +194,7 @@ jobs:
             if (failed) {
               core.summary.addHeading('Failed Commits', 3);
               // Use addRaw with proper markdown list formatting and add a single block
-              core.summary.addRaw(failedShas.map(sha => `- \\`${sha.slice(0,7)}\\``).join('\n') + '\n');
+              core.summary.addRaw(failedShas.map(sha => '- `' + sha.slice(0,7) + '`').join('\n') + '\n');
               await core.summary.write();
             }
 
