@@ -143,7 +143,7 @@ jobs:
               : '';
 
             // Build body using concatenation (YAML-safe)
-            let body = '## RDKB Commit Message Validation\n\n';
+            let body = '## Validate Commit Messages\n\n';
             body += '**Status:** ' + status + '\n';
             body += '**Commits validated:** ' + commitCount + '\n';
             body += failedList;
@@ -172,7 +172,7 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const existing = comments.find(c => c.body.startsWith('## RDKB Commit Message Validation'));
+            const existing = comments.find(c => c.body.startsWith('## Validate Commit Messages'));
 
             if (existing) {
               await github.rest.issues.updateComment({

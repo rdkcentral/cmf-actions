@@ -1,4 +1,4 @@
-name: "RDKB Commit Message Validation"
+name: "Validate Commit Messages"
 
 # Template workflow for validating RDKB commit message format in pull requests
 # Copy this file to your repository's .github/workflows/ directory
