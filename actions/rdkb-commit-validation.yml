@@ -16,7 +16,6 @@ on:
 
 jobs:
   validate-commits:
-    name: "Validate Commit Messages"
     uses: rdkcentral/cmf-actions/.github/workflows/rdkb-commit-validation.yml@main
     permissions:
       contents: read
