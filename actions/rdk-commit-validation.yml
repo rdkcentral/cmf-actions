@@ -1,0 +1,24 @@
+name: "RDK Commit Message Validation"
+
+# Template workflow for validating RDK commit message format in pull requests
+# Copy this file to your repository's .github/workflows/ directory
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-commits:
+    name: "Validate Commit Messages"
+    uses: rdkcentral/cmf-actions/.github/workflows/rdk-commit-validation.yml@main
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
