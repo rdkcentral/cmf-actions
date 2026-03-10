@@ -1,6 +1,6 @@
-name: "RDK Commit Message Validation"
+name: "RDKB Commit Message Validation"
 
-# Template workflow for validating RDK commit message format in pull requests
+# Template workflow for validating RDKB commit message format in pull requests
 # Copy this file to your repository's .github/workflows/ directory
 
 permissions:
@@ -17,7 +17,7 @@ on:
 jobs:
   validate-commits:
     name: "Validate Commit Messages"
-    uses: rdkcentral/cmf-actions/.github/workflows/rdk-commit-validation.yml@main
+    uses: rdkcentral/cmf-actions/.github/workflows/rdkb-commit-validation.yml@main
     permissions:
       contents: read
       pull-requests: write
