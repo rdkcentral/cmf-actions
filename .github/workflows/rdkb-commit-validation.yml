@@ -1,0 +1,203 @@
+name: RDKB Commit Message Validation
+
+# Reusable workflow for validating RDKB commit message format
+# Called by other repos via workflow_call
+
+on:
+  workflow_call:
+
+jobs:
+  validate-commits:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate commits
+        id: validate
+        run: |
+          # Get PR commits (excluding merge commits)
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          mapfile -t COMMITS < <(git log --no-merges --format="%H" "$BASE_SHA..$HEAD_SHA")
+          COMMIT_COUNT=${#COMMITS[@]}
+
+          echo "Validating $COMMIT_COUNT commits..."
+
+          # Track results
+          FAILED_SHAS=()
+          VALIDATION_FAILED=false
+
+          # RDK(B) title pattern
+          TITLE_PATTERN='^(RDKB|RDK)-[0-9]+\s*:\s*.+'
+
+          for sha in "${COMMITS[@]}"; do
+            COMMIT_FAILED=false
+            ISSUES=()
+
+            # Get commit message
+            TITLE=$(git log --format=%s -n 1 "$sha")
+            BODY=$(git log --format=%b -n 1 "$sha")
+
+            echo "----------------------------------------"
+            echo "Commit: ${sha:0:7} - $TITLE"
+
+            # Skip merge/revert commits
+            if [[ "$TITLE" =~ ^Merge\ |^Revert\  ]]; then
+              echo "⏭️  Skipping merge/revert commit"
+              continue
+            fi
+
+            # Check title format
+            if ! echo "$TITLE" | grep -qE "$TITLE_PATTERN"; then
+              ISSUES+=("Title must match: TICKET-NUMBER : Description")
+              COMMIT_FAILED=true
+            fi
+
+            # Check required fields
+            for field in "Description:" "Reason for change:" "Test Procedure:" "Signed-off-by:"; do
+              if ! echo "$BODY" | grep -iq "$field"; then
+                ISSUES+=("Missing: $field")
+                COMMIT_FAILED=true
+              fi
+            done
+
+            # Check Priority field and value
+            if ! echo "$BODY" | grep -iq "Priority\s*:"; then
+              ISSUES+=("Missing: Priority")
+              COMMIT_FAILED=true
+            elif ! echo "$BODY" | grep -i "Priority\s*:" | grep -iqE "(Low|Medium|High)"; then
+              ISSUES+=("Priority must be Low, Medium, or High")
+              COMMIT_FAILED=true
+            fi
+
+            # Check Risks field and value
+            if ! echo "$BODY" | grep -iq "Risks:"; then
+              ISSUES+=("Missing: Risks")
+              COMMIT_FAILED=true
+            elif ! echo "$BODY" | grep -i "Risks:" | grep -iqE "(Low|Medium|High)"; then
+              ISSUES+=("Risks must be Low, Medium, or High")
+              COMMIT_FAILED=true
+            fi
+
+            # Check Signed-off-by has valid email
+            if echo "$BODY" | grep -iq "Signed-off-by:"; then
+              if ! echo "$BODY" | grep -i "Signed-off-by:" | grep -qE "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"; then
+                ISSUES+=("Signed-off-by must include valid email")
+                COMMIT_FAILED=true
+              fi
+            fi
+
+            # Report result
+            if [ "$COMMIT_FAILED" = true ]; then
+              echo "❌ FAILED"
+              printf '   - %s\n' "${ISSUES[@]}"
+              FAILED_SHAS+=("$sha")
+              VALIDATION_FAILED=true
+            else
+              echo "✅ PASSED"
+            fi
+          done
+
+          echo "----------------------------------------"
+
+          # Write results to files for next step
+          echo "$COMMIT_COUNT" > commit_count.txt
+          echo "$VALIDATION_FAILED" > validation_result.txt
+          printf '%s\n' "${FAILED_SHAS[@]}" > failed_shas.txt
+
+          if [ "$VALIDATION_FAILED" = true ]; then
+            echo ""
+            echo "❌ Validation failed for ${#FAILED_SHAS[@]} commit(s)"
+          else
+            echo ""
+            echo "✅ All $COMMIT_COUNT commits passed validation"
+          fi
+
+      - name: Post results
+        if: always()
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+
+            // Read validation results
+            const commitCount = fs.readFileSync('commit_count.txt', 'utf8').trim();
+            const failed = fs.readFileSync('validation_result.txt', 'utf8').trim() === 'true';
+
+            let failedShas = [];
+            try {
+              const content = fs.readFileSync('failed_shas.txt', 'utf8').trim();
+              if (content) failedShas = [...new Set(content.split('\n').filter(Boolean))];
+            } catch (e) {}
+
+            const status = failed ? '❌ Failed' : '✅ Passed';
+            const failedList = failedShas.length > 0
+              ? '\n' + '**Failed commits:**\n' + failedShas.map(s => '- `' + s.slice(0,7) + '`').join('\n') + '\n'
+              : '';
+
+            // Build body using concatenation (YAML-safe)
+            let body = '## Validate Commit Messages\n\n';
+            body += '**Status:** ' + status + '\n';
+            body += '**Commits validated:** ' + commitCount + '\n';
+            body += failedList;
+
+            if (failed) {
+              body += '\n### ❌ Validation Failed\n\n';
+              body += 'One or more commits do not follow the RDKB commit message format.\n\n';
+              body += '**Required format:**\n';
+              body += '```\n';
+              body += 'TICKET-NUMBER : Title\n';
+              body += 'Description: <text>\n';
+              body += 'Reason for change: <text>\n';
+              body += 'Test Procedure: <text>\n';
+              body += 'Priority: Low|Medium|High\n';
+              body += 'Risks: Low|Medium|High\n';
+              body += 'Signed-off-by: name <email@domain.com>\n';
+              body += '```\n';
+            } else {
+              body += '\n### ✅ All commits validated successfully\n';
+            }
+
+            // Update or create PR comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.startsWith('## Validate Commit Messages'));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
+
+            // Add to job summary
+            if (failed) {
+              core.summary.addHeading('Failed Commits', 3);
+              // Use addRaw with proper markdown list formatting and add a single block
+              core.summary.addRaw(failedShas.map(sha => '- `' + sha.slice(0,7) + '`').join('\n') + '\n');
+              await core.summary.write();
+            }
+
+            // Fail the workflow if validation failed
+            if (failed) {
+              core.setFailed('Commit validation failed. See PR comment for details.');
+            }
