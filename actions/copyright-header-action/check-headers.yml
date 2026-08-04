@@ -32,9 +32,9 @@ jobs:
           if [ -f NOTICE ]; then
             organisation=$(grep -im1 'copyright' NOTICE | sed -E 's/.*[Cc]opyright( \(c\))?[[:space:]]*//; s/^[0-9]{4}([,-][0-9]{4})*[[:space:]]+//; s/[[:space:]]+$//; s/\.$//')
             if [ -n "$organisation" ]; then
-              echo "organisation=$organisation" >> $GITHUB_ENV
+              echo "organisation=$organisation" >> "$GITHUB_ENV"
             else
-              echo "organisation=Comcast Cable Communications Management, LLC" >> $GITHUB_ENV
+              echo "organisation=Comcast Cable Communications Management, LLC" >> "$GITHUB_ENV"
             fi
           else
             echo "organisation=Comcast Cable Communications Management, LLC" >> $GITHUB_ENV
