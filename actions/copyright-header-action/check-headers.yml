@@ -1,0 +1,125 @@
+name: Check Source Code Files for missing Copyright Headers
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-copyright-headers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v5
+
+      - name: Setup golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.22'
+
+      - name: Install google addlicense
+        run: |
+          go install github.com/google/addlicense@v1.2.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          
+      - name: Extract organisation from NOTICE file from root
+        id: extract_organisation
+        run: |
+          if [ -f NOTICE ]; then
+            organisation=$(grep -im1 'copyright' NOTICE | sed -E 's/.*[Cc]opyright( \(c\))?[[:space:]]*//; s/^[0-9]{4}([,-][0-9]{4})*[[:space:]]+//; s/[[:space:]]+$//; s/\.$//')
+            if [ -n "$organisation" ]; then
+              echo "organisation=$organisation" >> $GITHUB_ENV
+            else
+              echo "organisation=Comcast Cable Communications Management, LLC" >> $GITHUB_ENV
+            fi
+          else
+            echo "organisation=Comcast Cable Communications Management, LLC" >> $GITHUB_ENV
+          fi
+ 
+      - name: Create Copyright template file
+        env:
+          ORGANISATION: ${{ env.organisation }}
+        run: |
+          cat > /tmp/copyright.tmpl <<EOF
+          Copyright (c){{ if .Year }} {{.Year}}{{ end }} ${ORGANISATION}
+
+          Licensed under the Apache License, Version 2.0 (the "License");
+          you may not use this file except in compliance with the License.
+          You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+          Unless required by applicable law or agreed to in writing, software
+          distributed under the License is distributed on an "AS IS" BASIS,
+          WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+          See the License for the specific language governing permissions and
+          limitations under the License.
+          EOF
+          chmod 0600 /tmp/copyright.tmpl
+
+      - name: Run file check for Copyright headers
+        id: addlicense_output
+        env:
+          IGNORE_PATTERN: "**/node_modules/**,**/build/**,**/dist/**,**/.github/**"
+          INCLUDE_PATTERN: "**/*.c,**/*.cc,**/*.cpp,**/*.cxx,**/*.h,**/*.hh,**/*.hpp,**/*.hxx,**/*.go,**/*.sh,**/*.bash,**/*.py,**/*.java,**/*.js,**/*.ts"
+        continue-on-error: true
+        run: |
+          IFS=',' read -r -a PATTERNS <<< "$INCLUDE_PATTERN"
+          FIND_ARGS=()
+          for i in "${!PATTERNS[@]}"; do
+            name="${PATTERNS[$i]##*/}"
+            [ "$i" -gt 0 ] && FIND_ARGS+=("-o")
+            FIND_ARGS+=("-name" "$name")
+          done
+
+          IFS=',' read -r -a IGNORE_ARRAY <<< "$IGNORE_PATTERN"
+          IGNORE_FLAGS=()
+          for pattern in "${IGNORE_ARRAY[@]}"; do
+            IGNORE_FLAGS+=("-ignore" "$pattern")
+          done
+
+          if ! find . -not -path './.git/*' -type f \( "${FIND_ARGS[@]}" \) | \
+            xargs -r addlicense -f /tmp/copyright.tmpl "${IGNORE_FLAGS[@]}" -check > /tmp/addlicense_output.txt 2>&1; then
+            
+            echo "::warning::addlicense command found files missing copyright headers"
+            while read -r line; do
+              echo "::warning::$line"
+            done < /tmp/addlicense_output.txt
+
+            {
+              echo '## :warning: Automated Copyright License Check'
+              echo 'The following files are missing the copyright header:'
+              echo
+              cat /tmp/addlicense_output.txt
+              echo
+              echo '**To add the copyright header to the files listed above, select [Apply Copyright Headers with Google Addlicense](https://github.com/${{ github.repository }}/actions/workflows/apply-headers.yml) workflow.**'
+            } > /tmp/comment_message.txt
+          else
+            echo "No files missing copyright headers"
+            {
+              echo '## :white_check_mark: Automated Copyright License Check'
+              echo 'No files missing copyright header.'
+            } > /tmp/comment_message.txt
+          fi
+
+      - name: Post comment to PR with addlicense results
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+        if: github.event_name == 'pull_request'
+        run: |
+          COMMENT_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${GITHUB_PULL_REQUEST_NUMBER}/comments" -q '.[] | select(.user.login=="github-actions[bot]" and (.body | contains("Automated Copyright License Check"))) | .id')
+
+          if [ -z "$COMMENT_ID" ]; then
+            echo "Creating new copyright check warning comment"
+          else
+            echo "Replacing old copyright check warning comment"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/${COMMENT_ID}"
+          fi
+
+          gh pr comment "$GITHUB_PULL_REQUEST_NUMBER" --body-file /tmp/comment_message.txt
