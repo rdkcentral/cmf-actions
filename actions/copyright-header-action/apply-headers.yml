@@ -1,0 +1,142 @@
+name: Apply Missing Copyright Headers to Source Code Files
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-copyright-headers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.22'
+
+      - name: Install google addlicense
+        run: |
+          go install github.com/google/addlicense@v1.2.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Extract organisation from NOTICE file from root
+        id: extract_organisation
+        run: |
+          if [ ! -f NOTICE ]; then
+            echo "::error file=NOTICE::NOTICE file is required at the repository root"
+            exit 1
+          fi
+
+          copyright_line=$(grep -im1 'copyright' NOTICE || true)
+          if [ -z "$copyright_line" ]; then
+            echo "::error file=NOTICE::NOTICE must contain a copyright line"
+            exit 1
+          fi
+
+          organisation=$(printf '%s\n' "$copyright_line" | sed -E 's/.*[Cc]opyright( \(c\))?[[:space:]]*//; s/^([0-9]{4}([[:space:]]*[-,][[:space:]]*[0-9]{4})*[[:space:]]*)+//; s/[[:space:]]+$//; s/\.$//')
+
+          if [ -z "$organisation" ]; then
+            echo "::error file=NOTICE::Unable to extract an organisation name from NOTICE"
+            exit 1
+          fi
+
+          header_style="generic"
+          if printf '%s' "$organisation" | grep -qi 'comcast'; then
+            header_style="comcast"
+          fi
+
+          echo "Organisation extracted from NOTICE file: $organisation"
+          echo "organisation=$organisation" >> "$GITHUB_ENV"
+          echo "header_style=$header_style" >> "$GITHUB_ENV"
+
+      - name: Create copyright template file
+        env:
+          ORGANISATION: ${{ env.organisation }}
+          HEADER_STYLE: ${{ env.header_style }}
+        run: |
+          if [ "$HEADER_STYLE" = "comcast" ]; then
+            cat > /tmp/copyright.tmpl <<EOF
+          Copyright {{ if .Year }} {{.Year}}{{ end }} ${ORGANISATION}
+
+          Licensed under the Apache License, Version 2.0 (the "License");
+          you may not use this file except in compliance with the License.
+          You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+          Unless required by applicable law or agreed to in writing, software
+          distributed under the License is distributed on an "AS IS" BASIS,
+          WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+          See the License for the specific language governing permissions and
+          limitations under the License.
+
+          SPDX-License-Identifier: Apache-2.0
+          EOF
+          else
+            cat > /tmp/copyright.tmpl <<EOF
+          If not stated otherwise in this file or this component's LICENSE file the
+          following copyright and licenses apply:
+
+          Copyright {{ if .Year }} {{.Year}}{{ end }} ${ORGANISATION}
+
+          Licensed under the Apache License, Version 2.0 (the "License");
+          you may not use this file except in compliance with the License.
+          You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+          Unless required by applicable law or agreed to in writing, software
+          distributed under the License is distributed on an "AS IS" BASIS,
+          WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+          See the License for the specific language governing permissions and
+          limitations under the License.
+          EOF
+          fi
+
+          chmod 0600 /tmp/copyright.tmpl
+
+      - name: Apply missing copyright headers
+        env:
+          IGNORE_PATTERN: "**/node_modules/**,**/build/**,**/dist/**,**/.github/**"
+          INCLUDE_PATTERN: "**/*.c,**/*.cc,**/*.cpp,**/*.cxx,**/*.h,**/*.hh,**/*.hpp,**/*.hxx,**/*.go,**/*.sh,**/*.bash,**/*.py,**/*.java,**/*.js,**/*.ts"
+        run: |
+
+          # Only include files that match the include pattern where we will 
+          # use find to locate files and pass them to addlicense
+
+          IFS=',' read -r -a PATTERNS <<< "$INCLUDE_PATTERN"
+          FIND_ARGS=()
+          for i in "${!PATTERNS[@]}"; do
+            name="${PATTERNS[$i]##*/}"
+            [ "$i" -gt 0 ] && FIND_ARGS+=("-o")
+            FIND_ARGS+=("-name" "$name")
+          done
+
+          # Add files that match the ignore pattern to the ignore flags
+
+          IFS=',' read -r -a IGNORE_ARRAY <<< "$IGNORE_PATTERN"
+          IGNORE_FLAGS=()
+          for pattern in "${IGNORE_ARRAY[@]}"; do
+            IGNORE_FLAGS+=("-ignore" "$pattern")
+          done
+
+          find . -not -path './.git/*' -type f \( "${FIND_ARGS[@]}" \) -print0 | \
+            xargs -0 -r addlicense -f /tmp/copyright.tmpl "${IGNORE_FLAGS[@]}"
+
+      - name: Commit and push changes
+        run: |
+          if git diff --quiet; then
+            echo "No copyright header changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Apply copyright headers"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

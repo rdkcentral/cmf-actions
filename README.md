@@ -66,6 +66,28 @@ Performs license scanning and compliance checks using FOSSology on pull request 
 **Triggers**:
 - Pull request events (opened, synchronize, reopened)
 
+
+### 4. Copyright Check and Apply Headers 
+
+**Files**:
+
+- `actions/copyright-header-action/apply-headers.yml`
+- `actions/copyright-header-action/check-headers.yml`
+
+Peforms Copyright header checking and prompts user to Apply a suggested copyright header
+
+**Features**:
+
+- Automatically Detects organization via NOTICE File
+- Varied Headers for Comcast and Non-comcast specific repositories
+- Customizable Include and Ignore file pattern lists (Within source code easily editable)
+- Check completely integrated into Pull requests (Comments as output)
+
+**Triggers**:
+
+- Check Copyright Headers -> Runs on pull requests
+- Apply Copyright Headers -> Workflow dispatch on branch in given pull request
+
 ## 📖 Usage
 
 ### Using the CLA Action
